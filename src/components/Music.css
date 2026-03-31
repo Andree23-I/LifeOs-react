@@ -107,6 +107,34 @@
     margin: 2rem 0;
 }
 
+.error-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 0.8rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    color: #856404;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-message p {
+    margin: 0;
+    flex: 1;
+}
+
+.error-message .btn-secondary {
+    margin-left: 1rem;
+    background-color: #ffc107;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.error-message .btn-secondary:hover {
+    background-color: #ffb300;
+}
+
 .search-bar {
     display: flex;
     gap: 1rem;
@@ -197,10 +225,69 @@
     text-overflow: ellipsis;
 }
 
+.playlists-section h3 {
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+
+.playlists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.playlist-card {
+    background: #fff;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.playlist-card:hover {
+    transform: translateY(-5px);
+}
+
+.playlist-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+.playlist-details {
+    padding: 1rem;
+}
+
+.playlist-name {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-owner {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.3rem;
+}
+
+.playlist-tracks {
+    display: block;
+    font-size: 0.85rem;
+    color: #999;
+}
+
 /* Dark theme support */
 body.dark .spotify-card,
 body.dark .spotify-profile,
-body.dark .track-card {
+body.dark .track-card,
+body.dark .playlist-card {
     background-color: #2c2c2c;
     color: #fff;
 }
@@ -208,7 +295,9 @@ body.dark .track-card {
 body.dark .music-header p,
 body.dark .spotify-card p,
 body.dark .profile-info p,
-body.dark .track-artist {
+body.dark .track-artist,
+body.dark .playlist-owner,
+body.dark .playlist-tracks {
     color: #aaa;
 }
 
@@ -216,4 +305,10 @@ body.dark .search-bar input {
     background-color: #3d3d3d;
     border-color: #444;
     color: #fff;
+}
+
+body.dark .error-message {
+    background-color: #3d2c1f;
+    border-color: #6b5533;
+    color: #ffc107;
 }

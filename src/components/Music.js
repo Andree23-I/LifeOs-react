@@ -3,15 +3,18 @@ import './Music.css';
 import { SettingsContext } from '../contexts/SettingsContext';
 import { translations } from '../translations';
 
-const SPOTIFY_CLIENT_ID = '86510d6ae01b450daf5d6103ca421df9';
+const SPOTIFY_CLIENT_ID = '<YOUR_SPOTIFY_CLIENT_ID>'; // Replace with your actual Spotify Client ID';
 const REDIRECT_URI = 'https://andree23-i.github.io/LifeOs-react/';
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
 const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 const SCOPES = [
+    "user-read-private",
+    "user-read-email",
     "user-read-currently-playing",
     "user-read-recently-played",
     "user-top-read",
-    "playlist-read-private"
+    "playlist-read-private",
+    "playlist-read-public"
 ].join("%20");
 
 // PKCE Helpers
@@ -40,15 +43,64 @@ function Music({ user }) {
     const [token, setToken] = useState("");
     const [spotifyUser, setSpotifyUser] = useState(null);
     const [topTracks, setTopTracks] = useState([]);
+    const [playlists, setPlaylists] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    
+    // Use ref to prevent duplicate requests
+    const isFetchingRef = React.useRef(false);
+
+    // Helper function to fetch with retry logic
+    const fetchWithRetry = async (url, options, maxRetries = 3) => {
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const res = await fetch(url, options);
+                
+                // Check for rate limiting
+                if (res.status === 429) {
+                    const retryAfter = res.headers.get('Retry-After') || (i === 0 ? 1 : 2 ** i);
+                    console.warn(`Rate limited. Waiting ${retryAfter}s before retry ${i + 1}/${maxRetries}`);
+                    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                    continue;
+                }
+                
+                if (res.status === 401) {
+                    throw new Error("Token expired");
+                }
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const text = await res.text();
+                if (!text) return { items: [] };
+                return JSON.parse(text);
+            } catch (error) {
+                if (i === maxRetries - 1) throw error;
+                const delay = Math.pow(2, i) * 500;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    };
+
+    // Reset state when user changes
+    useEffect(() => {
+        setToken("");
+        setSpotifyUser(null);
+        setTopTracks([]);
+        setPlaylists([]);
+        setSearchResults([]);
+        setSearchQuery("");
+        setError(null);
+    }, [user.id]);
 
     useEffect(() => {
         const handleAuth = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             let code = urlParams.get('code');
-            let storedToken = window.localStorage.getItem("spotify_token");
+            let storedToken = window.localStorage.getItem(`spotify_token_${user.id}`);
 
             if (storedToken) {
                 setToken(storedToken);
@@ -57,7 +109,7 @@ function Music({ user }) {
             }
 
             if (code) {
-                const codeVerifier = window.localStorage.getItem('code_verifier');
+                const codeVerifier = window.localStorage.getItem(`code_verifier_${user.id}`);
                 
                 const payload = {
                     method: 'POST',
@@ -77,7 +129,7 @@ function Music({ user }) {
                     const res = await fetch(TOKEN_ENDPOINT, payload);
                     const data = await res.json();
                     if (data.access_token) {
-                        window.localStorage.setItem("spotify_token", data.access_token);
+                        window.localStorage.setItem(`spotify_token_${user.id}`, data.access_token);
                         setToken(data.access_token);
                         fetchSpotifyData(data.access_token);
                         // Pulisce l'URL
@@ -90,48 +142,78 @@ function Music({ user }) {
         };
 
         handleAuth();
-    }, []);
+    }, [user.id]);
 
     const fetchSpotifyData = async (token) => {
+        // Prevent duplicate requests
+        if (isFetchingRef.current) {
+            console.log("Fetch already in progress, skipping...");
+            return;
+        }
+
+        isFetchingRef.current = true;
         setLoading(true);
+        setError(null);
         try {
             // Fetch User Profile
-            const userRes = await fetch("https://api.spotify.com/v1/me", {
+            const userData = await fetchWithRetry("https://api.spotify.com/v1/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (userRes.status === 401) {
-                logout();
-                return;
+            
+            if (userData.error) {
+                if (userData.error.status === 401) {
+                    setError("Token expired. Please login again.");
+                    logout();
+                    return;
+                }
+                throw new Error(userData.error.message);
             }
-            const userData = await userRes.json();
+            
+            console.log("User data:", userData);
             setSpotifyUser(userData);
 
+            // Add a small delay between requests to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 200));
+
             // Fetch Top Tracks
-            const tracksRes = await fetch("https://api.spotify.com/v1/me/top/tracks?limit=5", {
+            const tracksData = await fetchWithRetry("https://api.spotify.com/v1/me/top/tracks?limit=5&time_range=short_term", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const tracksData = await tracksRes.json();
+            console.log("Tracks data:", tracksData);
             setTopTracks(tracksData.items || []);
+
+            // Add a small delay between requests
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Fetch Playlists
+            const playlistsData = await fetchWithRetry("https://api.spotify.com/v1/me/playlists?limit=50", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Playlists data:", playlistsData);
+            setPlaylists(playlistsData.items || []);
+
         } catch (error) {
             console.error("Error fetching Spotify data:", error);
+            setError(`Error loading data: ${error.message}`);
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
         }
     };
 
     const searchTracks = async (e) => {
         e.preventDefault();
-        if (!searchQuery) return;
+        if (!searchQuery || !token) return;
         
         setLoading(true);
         try {
-            const res = await fetch(`https://api.spotify.com/v1/search?q=${searchQuery}&type=track&limit=10`, {
+            const data = await fetchWithRetry(`https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&limit=10`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const data = await res.json();
-            setSearchResults(data.tracks.items || []);
+            setSearchResults(data.tracks?.items || []);
         } catch (error) {
             console.error("Error searching tracks:", error);
+            setError(`Search error: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -141,10 +223,12 @@ function Music({ user }) {
         setToken("");
         setSpotifyUser(null);
         setTopTracks([]);
+        setPlaylists([]);
         setSearchResults([]);
         setSearchQuery("");
-        window.localStorage.removeItem("spotify_token");
-        window.localStorage.removeItem("code_verifier");
+        setError(null);
+        window.localStorage.removeItem(`spotify_token_${user.id}`);
+        window.localStorage.removeItem(`code_verifier_${user.id}`);
     };
 
     const handleLogin = async () => {
@@ -152,7 +236,7 @@ function Music({ user }) {
         const hashed = await sha256(codeVerifier);
         const codeChallenge = base64encode(hashed);
 
-        window.localStorage.setItem('code_verifier', codeVerifier);
+        window.localStorage.setItem(`code_verifier_${user.id}`, codeVerifier);
 
         const params = {
             response_type: 'code',
@@ -194,6 +278,11 @@ function Music({ user }) {
                 <div className="spotify-content">
                     {loading ? (
                         <div className="loader">Loading...</div>
+                    ) : error ? (
+                        <div className="error-message">
+                            <p>{error}</p>
+                            <button onClick={() => setError(null)} className="btn-secondary">Dismiss</button>
+                        </div>
                     ) : (
                         <>
                             {spotifyUser && (
@@ -248,6 +337,23 @@ function Music({ user }) {
                                         </div>
                                     ))}
                                     {topTracks.length === 0 && <p>No tracks found.</p>}
+                                </div>
+                            </div>
+
+                            <div className="playlists-section">
+                                <h3>{t.Playlists || 'Your Playlists'}</h3>
+                                <div className="playlists-grid">
+                                    {playlists.map(playlist => (
+                                        <div key={playlist.id} className="playlist-card">
+                                            <img src={playlist.images?.[0]?.url || 'https://via.placeholder.com/150'} alt={playlist.name} />
+                                            <div className="playlist-details">
+                                                <span className="playlist-name">{playlist.name}</span>
+                                                <span className="playlist-owner">{playlist.owner?.display_name}</span>
+                                                <span className="playlist-tracks">{playlist.tracks?.total} tracks</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {playlists.length === 0 && <p>No playlists found.</p>}
                                 </div>
                             </div>
                         </>
