@@ -21,12 +21,20 @@ const Icons = {
       <line x1="10" y1="1" x2="10" y2="4"></line>
       <line x1="14" y1="1" x2="14" y2="4"></line>
     </svg>
+  ),
+  Music: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"></path>
+      <circle cx="6" cy="18" r="3"></circle>
+      <circle cx="18" cy="16" r="3"></circle>
+    </svg>
   )
 };
 
 const navItems = [
   { id: 'dashboard', labelKey: 'Dashboard', icon: Icons.Dashboard },
   { id: 'diet', labelKey: 'Diet', icon: Icons.Diet },
+  { id: 'music', labelKey: 'Music', icon: Icons.Music },
 ];
 
 function Sidebar({ currentView, setCurrentView, user, onLogout }) {
