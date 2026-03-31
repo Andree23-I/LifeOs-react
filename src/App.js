@@ -3,7 +3,6 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Diet from './components/Diet';
-import Music from './components/Music';
 import Login from './components/Login';
 import { SettingsContext } from './contexts/SettingsContext';
 
@@ -34,7 +33,6 @@ function App() {
     switch(currentView) {
       case 'dashboard': return <Dashboard user={currentUser} />;
       case 'diet': return <Diet user={currentUser} />;
-      case 'music': return <Music user={currentUser} />;
       default: return <Dashboard user={currentUser} />;
     }
   };
