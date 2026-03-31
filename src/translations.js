@@ -3,6 +3,13 @@ export const translations = {
     // Sidebar
     Dashboard: "Dashboard",
     Diet: "Diet",
+    Music: "Music",
+    MusicSub: "Connect your Spotify to see your favorite tracks.",
+    SpotifyLoginDesc: "Connect to your Spotify account to see your stats.",
+    TopTracks: "Your Top Tracks",
+    SearchPlaceholder: "Search for a song...",
+    Search: "Search",
+    SearchResults: "Search Results",
     Member: "Member",
     Logout: "Logout",
     // Login
@@ -80,8 +87,15 @@ export const translations = {
   },
   it: {
     // Sidebar
-    Dashboard: "Cruscotto",
+    Dashboard: "Dashboard",
     Diet: "Dieta",
+    Music: "Musica",
+    MusicSub: "Collega il tuo Spotify per vedere i tuoi brani preferiti.",
+    SpotifyLoginDesc: "Collega il tuo account Spotify per vedere le tue statistiche.",
+    TopTracks: "I Tuoi Brani Preferiti",
+    SearchPlaceholder: "Cerca una canzone...",
+    Search: "Cerca",
+    SearchResults: "Risultati della Ricerca",
     Member: "Membro",
     Logout: "Esci",
     // Login
