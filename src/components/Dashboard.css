@@ -15,7 +15,7 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, var(--text-main) 0%, var(--primary) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -52,7 +52,7 @@
 .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-main);
   margin-bottom: 0.25rem;
 }
 

@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
-import Tasks from './components/Tasks';
-import Habits from './components/Habits';
-import Goals from './components/Goals';
 import Diet from './components/Diet';
 import Login from './components/Login';
+import { SettingsContext } from './contexts/SettingsContext';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const { theme, toggleTheme, language, toggleLanguage } = useContext(SettingsContext);
 
   useEffect(() => {
     const savedSession = sessionStorage.getItem('lifeplanner_active_user');
@@ -33,9 +32,6 @@ function App() {
   const renderView = () => {
     switch(currentView) {
       case 'dashboard': return <Dashboard user={currentUser} />;
-      case 'tasks': return <Tasks user={currentUser} />;
-      case 'habits': return <Habits user={currentUser} />;
-      case 'goals': return <Goals user={currentUser} />;
       case 'diet': return <Diet user={currentUser} />;
       default: return <Dashboard user={currentUser} />;
     }
@@ -54,6 +50,14 @@ function App() {
         onLogout={handleLogout}
       />
       <main className="main-content">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
+          <button onClick={toggleLanguage} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+            {language === 'en' ? '🇮🇹 IT' : '🇬🇧 EN'}
+          </button>
+          <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
+        </div>
         {renderView()}
       </main>
     </div>

@@ -26,7 +26,7 @@
 }
 
 .diet-tab-btn:hover {
-  color: #fff;
+  color: var(--text-main);
 }
 
 .diet-tab-btn.active {
@@ -81,7 +81,7 @@
 }
 
 .macro-chip strong {
-  color: #fff;
+  color: var(--text-main);
   font-weight: 700;
   display: block;
   font-size: 1.2rem;
@@ -193,7 +193,7 @@
   line-height: 1.5;
 }
 
-.tdee-desc strong { color: #fff; }
+.tdee-desc strong { color: var(--text-main); }
 
 .tdee-results-col {
   display: flex;

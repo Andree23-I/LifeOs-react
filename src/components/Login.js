@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './Login.css';
+import { SettingsContext } from '../contexts/SettingsContext';
+import { translations } from '../translations';
 
 function Login({ onLogin }) {
   const [users, setUsers] = useState([]);
   const [newUsername, setNewUsername] = useState('');
+  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+
+  const { language } = useContext(SettingsContext);
+  const t = translations[language];
 
   useEffect(() => {
     const savedUsers = JSON.parse(localStorage.getItem('lifeplanner_users')) || [];
@@ -21,13 +28,23 @@ function Login({ onLogin }) {
     onLogin(newUser);
   };
 
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminPassword === '1234') {
+      onLogin({ id: 'admin', name: 'Admin', isAdmin: true });
+    } else {
+      alert('Password errata!');
+      setAdminPassword('');
+    }
+  };
+
   const handleSelectUser = (user) => {
     onLogin(user);
   };
 
   const handleDeleteUser = (e, id) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this profile and all its data?")) {
+    if (window.confirm(t.deleteAsk || "Are you sure you want to delete this profile and all its data?")) {
       const updatedUsers = users.filter((u) => u.id !== id);
       localStorage.setItem('lifeplanner_users', JSON.stringify(updatedUsers));
       // Cleanup associated data
@@ -44,8 +61,8 @@ function Login({ onLogin }) {
       <div className="login-card glass-panel">
         <div className="login-header">
           <div className="logo-pulse login-logo"></div>
-          <h1>Welcome to LifeOS</h1>
-          <p>Select your profile or create a new one to continue.</p>
+          <h1>{t.WelcomeMsg}</h1>
+          <p>{t.SelectProfileMsg}</p>
         </div>
 
         <div className="users-list">
@@ -65,20 +82,47 @@ function Login({ onLogin }) {
         </div>
 
         <div className="divider">
-          <span>OR</span>
+          <span>{t.or}</span>
         </div>
 
         <form onSubmit={handleCreateUser} className="create-user-form">
           <input
             type="text"
-            placeholder="Enter your name..."
+            placeholder={t.EnterName}
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
             className="task-input"
             maxLength={20}
           />
-          <button type="submit" className="btn-primary">Create Profile</button>
+          <button type="submit" className="btn-primary">{t.CreateProfile}</button>
         </form>
+
+        <div className="divider">
+          <span>{t.admin}</span>
+        </div>
+
+        <div className="admin-section">
+          {!showAdminPrompt ? (
+            <button type="button" className="admin-btn" onClick={() => setShowAdminPrompt(true)}>
+              {t.AdminAccess}
+            </button>
+          ) : (
+            <form onSubmit={handleAdminLogin} className="admin-login-form fade-in">
+               <input
+                 type="password"
+                 placeholder={t.adminPasswordPlaceholder}
+                 value={adminPassword}
+                 onChange={(e) => setAdminPassword(e.target.value)}
+                 className="task-input"
+                 autoFocus
+               />
+               <div className="admin-btn-group">
+                 <button type="submit" className="btn-primary" style={{flex: 2}}>{t.login}</button>
+                 <button type="button" className="btn-secondary" style={{flex: 1}} onClick={() => { setShowAdminPrompt(false); setAdminPassword(''); }}>{t.cancel}</button>
+               </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

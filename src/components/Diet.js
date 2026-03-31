@@ -1,13 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './Diet.css';
+import { SettingsContext } from '../contexts/SettingsContext';
+import { translations } from '../translations';
 
-const ACTIVITY_LABELS = {
-  sedentary: 'Sedentary (Office job)',
-  light: 'Light (1-3 days/week)',
-  mod: 'Moderate (3-5 days/week)',
-  active: 'Active (6-7 days/week)',
-  very: 'Very Active (Athlete)',
-};
 
 const ACTIVITY_MULTIPLIERS = {
   sedentary: 1.2,
@@ -18,6 +13,17 @@ const ACTIVITY_MULTIPLIERS = {
 };
 
 function Diet({ user }) {
+  const { language } = useContext(SettingsContext);
+  const t = translations[language];
+
+  const ACTIVITY_LABELS = {
+    sedentary: t.activitySedentary,
+    light: t.activityLight,
+    mod: t.activityMod,
+    active: t.activityActive,
+    very: t.activityVery,
+  };
+
   const [activeTab, setActiveTab] = useState('tracker');
 
   const [stats, setStats] = useState({
@@ -119,18 +125,18 @@ function Diet({ user }) {
   const calsPercent = tdee > 0 ? Math.min(100, (calsConsumed / tdee) * 100) : 0;
 
   const tdeeRows = [
-    { label: 'Aggressive Cut', cals: tdeeBreakdown.lose_aggressive, tag: '-1000 kcal', color: '#ef4444' },
-    { label: 'Cut (Lose Fat)', cals: tdeeBreakdown.lose, tag: '-500 kcal', color: '#f97316' },
-    { label: 'Maintain Weight', cals: tdeeBreakdown.maintain, tag: 'Maintenance', color: 'var(--primary)' },
-    { label: 'Lean Bulk', cals: tdeeBreakdown.gain, tag: '+300 kcal', color: '#22c55e' },
-    { label: 'Aggressive Bulk', cals: tdeeBreakdown.gain_aggressive, tag: '+500 kcal', color: '#a855f7' },
+    { label: t.aggressiveCut, rawLabel: 'lose_aggressive', cals: tdeeBreakdown.lose_aggressive, tag: '-1000 kcal', color: '#ef4444' },
+    { label: t.cutLoseFat, rawLabel: 'lose', cals: tdeeBreakdown.lose, tag: '-500 kcal', color: '#f97316' },
+    { label: t.maintenance, rawLabel: 'maintain', cals: tdeeBreakdown.maintain, tag: 'Maintenance', color: 'var(--primary)' },
+    { label: t.leanBulk, rawLabel: 'gain', cals: tdeeBreakdown.gain, tag: '+300 kcal', color: '#22c55e' },
+    { label: t.aggressiveBulk, rawLabel: 'gain_aggressive', cals: tdeeBreakdown.gain_aggressive, tag: '+500 kcal', color: '#a855f7' },
   ];
 
   return (
     <div className="diet fade-in">
       <header className="page-header">
-        <h1>Diet & Nutrition</h1>
-        <p className="subtitle">Track your macros and stay fueled.</p>
+        <h1>{t.dietNutrition}</h1>
+        <p className="subtitle">{t.trackMacros}</p>
       </header>
 
       {/* Tab Navigation */}
@@ -139,13 +145,13 @@ function Diet({ user }) {
           className={`diet-tab-btn ${activeTab === 'tracker' ? 'active' : ''}`}
           onClick={() => setActiveTab('tracker')}
         >
-          🍽️ Daily Tracker
+          {t.dailyTracker}
         </button>
         <button
           className={`diet-tab-btn ${activeTab === 'tdee' ? 'active' : ''}`}
           onClick={() => setActiveTab('tdee')}
         >
-          🔥 TDEE Calculator
+          {t.tdeeCalc}
         </button>
       </div>
 
@@ -154,19 +160,19 @@ function Diet({ user }) {
         <div className="diet-content">
           <div className="diet-left-col">
             <div className="glass-panel stat-card summary-card bmr-card">
-              <div className="stat-title">Daily Energy Target</div>
+              <div className="stat-title">{t.dailyEnergyTarget}</div>
               <div className="stat-value">{tdee} <span style={{fontSize: '1rem', color: 'var(--text-muted)'}}>kcal</span></div>
 
               <div className="macros-grid">
-                <div className="macro-chip">Protein <strong>{macros.p}g</strong></div>
-                <div className="macro-chip">Fats <strong>{macros.f}g</strong></div>
-                <div className="macro-chip">Carbs <strong>{macros.c}g</strong></div>
+                <div className="macro-chip">{t.protein} <strong>{macros.p}g</strong></div>
+                <div className="macro-chip">{t.fats} <strong>{macros.f}g</strong></div>
+                <div className="macro-chip">{t.carbs} <strong>{macros.c}g</strong></div>
               </div>
 
               <div className="diet-progress-wrap mt-4">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span>Consumed: <strong>{calsConsumed}</strong></span>
-                  <span>Remaining: <strong style={{ color: calsConsumed > tdee ? '#ef4444' : 'var(--primary)' }}>{calsRemaining}</strong></span>
+                  <span>{t.consumed}: <strong>{calsConsumed}</strong></span>
+                  <span>{t.remaining}: <strong style={{ color: calsConsumed > tdee ? '#ef4444' : 'var(--primary)' }}>{calsRemaining}</strong></span>
                 </div>
                 <div className="progress-bar-bg">
                   <div
@@ -181,29 +187,29 @@ function Diet({ user }) {
             </div>
 
             <div className="glass-panel calculator-panel">
-              <h2>Body Settings</h2>
+              <h2>{t.bodySettings}</h2>
               <div className="stats-form">
                 <div className="form-group">
-                  <label>Age</label>
+                  <label>{t.age}</label>
                   <input type="number" name="age" value={stats.age} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group">
-                  <label>Gender</label>
+                  <label>{t.gender}</label>
                   <select name="gender" value={stats.gender} onChange={handleStatChange} className="task-input compact-input">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
+                    <option value="male">{t.male}</option>
+                    <option value="female">{t.female}</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Weight (kg)</label>
+                  <label>{t.weight}</label>
                   <input type="number" name="weight" value={stats.weight} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group">
-                  <label>Height (cm)</label>
+                  <label>{t.height}</label>
                   <input type="number" name="height" value={stats.height} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group">
-                  <label>Activity Level</label>
+                  <label>{t.activityLevel}</label>
                   <select name="activity" value={stats.activity} onChange={handleStatChange} className="task-input compact-input">
                     {Object.entries(ACTIVITY_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -211,11 +217,11 @@ function Diet({ user }) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Primary Goal</label>
+                  <label>{t.primaryGoal}</label>
                   <select name="goal" value={stats.goal} onChange={handleStatChange} className="task-input compact-input">
-                    <option value="lose">Lose Weight (Deficit)</option>
-                    <option value="maintain">Maintain Weight</option>
-                    <option value="gain">Build Muscle (Surplus)</option>
+                    <option value="lose">{t.loseWeight}</option>
+                    <option value="maintain">{t.maintainWeight}</option>
+                    <option value="gain">{t.buildMuscle}</option>
                   </select>
                 </div>
               </div>
@@ -224,11 +230,11 @@ function Diet({ user }) {
 
           <div className="diet-right-col">
             <div className="glass-panel food-log-panel">
-              <h2>Today's Food Log</h2>
+              <h2>{t.todaysFoodLog}</h2>
               <form onSubmit={addFood} className="food-form">
                 <input
                   type="text"
-                  placeholder="What did you eat?"
+                  placeholder={t.whatDidYouEat}
                   value={newFood.name}
                   onChange={(e) => setNewFood({...newFood, name: e.target.value})}
                   className="task-input compact-input"
@@ -246,7 +252,7 @@ function Diet({ user }) {
               </form>
               <div className="food-list">
                 {foodLog.length === 0 ? (
-                  <div className="empty-state" style={{ padding: '2rem' }}>No meals logged yet today!</div>
+                  <div className="empty-state" style={{ padding: '2rem' }}>{t.noMealsLogged}</div>
                 ) : (
                   foodLog.map(food => (
                     <div key={food.id} className="food-item">
@@ -268,30 +274,30 @@ function Diet({ user }) {
           <div className="tdee-top-row">
             {/* Input Panel */}
             <div className="glass-panel tdee-input-panel">
-              <h2>Your Measurements</h2>
-              <p className="tdee-desc">Fill in your details to calculate your Total Daily Energy Expenditure using the <strong>Mifflin-St Jeor</strong> equation.</p>
+              <h2>{t.measurements}</h2>
+              <p className="tdee-desc">{t.tdeeDesc1}</p>
               <div className="stats-form">
                 <div className="form-group">
-                  <label>Age</label>
+                  <label>{t.age}</label>
                   <input type="number" name="age" value={stats.age} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group">
-                  <label>Gender</label>
+                  <label>{t.gender}</label>
                   <select name="gender" value={stats.gender} onChange={handleStatChange} className="task-input compact-input">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
+                    <option value="male">{t.male}</option>
+                    <option value="female">{t.female}</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Weight (kg)</label>
+                  <label>{t.weight}</label>
                   <input type="number" name="weight" value={stats.weight} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group">
-                  <label>Height (cm)</label>
+                  <label>{t.height}</label>
                   <input type="number" name="height" value={stats.height} onChange={handleStatChange} className="task-input compact-input" />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Activity Level</label>
+                  <label>{t.activityLevel}</label>
                   <select name="activity" value={stats.activity} onChange={handleStatChange} className="task-input compact-input">
                     {Object.entries(ACTIVITY_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -304,28 +310,28 @@ function Diet({ user }) {
             {/* BMR / TDEE Result */}
             <div className="tdee-results-col">
               <div className="glass-panel tdee-result-card bmr-result">
-                <div className="tdee-result-label">⚡ Basal Metabolic Rate (BMR)</div>
+                <div className="tdee-result-label">{t.bmrLabel}</div>
                 <div className="tdee-result-value">{bmr}</div>
-                <div className="tdee-result-unit">kcal / day at complete rest</div>
+                <div className="tdee-result-unit">{t.bmrUnit}</div>
               </div>
               <div className="glass-panel tdee-result-card maintenance-result">
-                <div className="tdee-result-label">🔥 TDEE (Maintenance)</div>
+                <div className="tdee-result-label">{t.tdeeLabel}</div>
                 <div className="tdee-result-value">{tdeeBreakdown.maintain}</div>
-                <div className="tdee-result-unit">kcal / day with your activity level</div>
-                <div className="tdee-multiplier">× {ACTIVITY_MULTIPLIERS[stats.activity]} activity multiplier</div>
+                <div className="tdee-result-unit">{t.tdeeUnit}</div>
+                <div className="tdee-multiplier">× {ACTIVITY_MULTIPLIERS[stats.activity]} {t.activityMultiplier}</div>
               </div>
             </div>
           </div>
 
           {/* Calorie Scenarios Breakdown */}
           <div className="glass-panel tdee-breakdown-panel">
-            <h2>Calorie Goal Breakdown</h2>
-            <p className="tdee-desc">Based on your TDEE, here are the recommended calorie targets for different goals.</p>
+            <h2>{t.calorieGoalBreakdown}</h2>
+            <p className="tdee-desc">{t.tdeeDesc2}</p>
             <div className="tdee-breakdown-table">
               {tdeeRows.map((row) => (
                 <div
                   key={row.label}
-                  className={`tdee-row ${stats.goal === row.label.toLowerCase() ? 'highlighted' : ''}`}
+                  className={`tdee-row ${stats.goal === row.rawLabel ? 'highlighted' : ''}`}
                 >
                   <div className="tdee-row-dot" style={{ backgroundColor: row.color }}></div>
                   <div className="tdee-row-label">{row.label}</div>
@@ -347,12 +353,12 @@ function Diet({ user }) {
 
           {/* Macro Split */}
           <div className="glass-panel tdee-macros-panel">
-            <h2>Recommended Macro Split</h2>
-            <p className="tdee-desc">Based on your current goal: <strong>{stats.goal === 'lose' ? 'Losing Fat' : stats.goal === 'gain' ? 'Building Muscle' : 'Maintaining Weight'}</strong></p>
+            <h2>{t.recommendedMacroSplit}</h2>
+            <p className="tdee-desc">{t.macroDesc1} <strong>{stats.goal === 'lose' ? t.losingFat : stats.goal === 'gain' ? t.buildingMuscle : t.maintainingWeight}</strong></p>
             <div className="tdee-macros-grid">
               <div className="tdee-macro-card protein">
                 <div className="tmacro-icon">🥩</div>
-                <div className="tmacro-name">Protein</div>
+                <div className="tmacro-name">{t.protein}</div>
                 <div className="tmacro-value">{macros.p}g</div>
                 <div className="tmacro-cals">{macros.p * 4} kcal · 30%</div>
                 <div className="tmacro-bar-bg">
@@ -361,7 +367,7 @@ function Diet({ user }) {
               </div>
               <div className="tdee-macro-card carbs">
                 <div className="tmacro-icon">🌾</div>
-                <div className="tmacro-name">Carbohydrates</div>
+                <div className="tmacro-name">{t.carbohydrates}</div>
                 <div className="tmacro-value">{macros.c}g</div>
                 <div className="tmacro-cals">{macros.c * 4} kcal · 45%</div>
                 <div className="tmacro-bar-bg">
@@ -370,7 +376,7 @@ function Diet({ user }) {
               </div>
               <div className="tdee-macro-card fats">
                 <div className="tmacro-icon">🥑</div>
-                <div className="tmacro-name">Fats</div>
+                <div className="tmacro-name">{t.fats}</div>
                 <div className="tmacro-value">{macros.f}g</div>
                 <div className="tmacro-cals">{macros.f * 9} kcal · 25%</div>
                 <div className="tmacro-bar-bg">

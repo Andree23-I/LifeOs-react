@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import './Sidebar.css';
+import { SettingsContext } from '../contexts/SettingsContext';
+import { translations } from '../translations';
 
 // Custom SVG Icons (Lucide-like)
 const Icons = {
@@ -9,25 +11,6 @@ const Icons = {
       <rect x="14" y="3" width="7" height="5" rx="1"></rect>
       <rect x="14" y="12" width="7" height="9" rx="1"></rect>
       <rect x="3" y="16" width="7" height="5" rx="1"></rect>
-    </svg>
-  ),
-  Tasks: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 11 12 14 22 4"></polyline>
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-    </svg>
-  ),
-  Habits: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2v20"></path>
-      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-    </svg>
-  ),
-  Goals: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="12"></line>
-      <line x1="12" y1="16" x2="12.01" y2="16"></line>
     </svg>
   ),
   Diet: () => (
@@ -42,14 +25,14 @@ const Icons = {
 };
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
-  { id: 'tasks', label: 'Tasks', icon: Icons.Tasks },
-  { id: 'habits', label: 'Habits', icon: Icons.Habits },
-  { id: 'goals', label: 'Goals', icon: Icons.Goals },
-  { id: 'diet', label: 'Diet', icon: Icons.Diet },
+  { id: 'dashboard', labelKey: 'Dashboard', icon: Icons.Dashboard },
+  { id: 'diet', labelKey: 'Diet', icon: Icons.Diet },
 ];
 
 function Sidebar({ currentView, setCurrentView, user, onLogout }) {
+  const { language } = useContext(SettingsContext);
+  const t = translations[language];
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -69,7 +52,7 @@ function Sidebar({ currentView, setCurrentView, user, onLogout }) {
               <span className="icon-wrapper">
                 <IconComponent />
               </span>
-              <span className="label">{item.label}</span>
+              <span className="label">{t[item.labelKey]}</span>
             </button>
           );
         })}
@@ -79,10 +62,10 @@ function Sidebar({ currentView, setCurrentView, user, onLogout }) {
           <div className="user-avatar">{(user?.username || user?.name || 'U')[0].toUpperCase()}</div>
           <div className="user-details">
             <span className="user-name">{user?.username || user?.name || 'User'}</span>
-            <span className="user-role">Member</span>
+            <span className="user-role">{t.Member}</span>
           </div>
         </div>
-        <button className="logout-btn" onClick={onLogout} title="Logout">
+        <button className="logout-btn" onClick={onLogout} title={t.Logout}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
