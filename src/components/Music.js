@@ -3,10 +3,12 @@ import './Music.css';
 import { SettingsContext } from '../contexts/SettingsContext';
 import { translations } from '../translations';
 
-const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID || 'a29bdebfec8a4eada4c40228bb1335c7';
+const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID || '7b0e978ecd5a4e86b88db4be5c29bc12';
 const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI || 'https://andree23-i.github.io/LifeOs-react/';
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
-const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
+const TOKEN_ENDPOINT = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:5000/api/spotify-token'
+  : '/api/spotify-token';
 const RESPONSE_TYPE = "code";
 const SCOPES = [
   "user-read-private",
@@ -14,8 +16,7 @@ const SCOPES = [
   "user-top-read",
   "user-library-read",
   "playlist-read-private",
-  "playlist-read-collaborative",
-  "search-library"
+  "playlist-read-collaborative"
 ].join(" ");
 
 const generateRandomString = (length) => {
@@ -40,6 +41,8 @@ const base64encode = (input) => {
 function Music({ user }) {
   const { language } = useContext(SettingsContext);
   const t = translations[language];
+  const userStorageKey = `spotify_token_${user?.id}`;
+  const codeVerifierKey = `code_verifier_${user?.id}`;
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -54,7 +57,7 @@ function Music({ user }) {
     const handleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
-      const savedToken = window.localStorage.getItem("spotify_token");
+      const savedToken = window.localStorage.getItem(userStorageKey);
 
       if (savedToken) {
         setToken(savedToken);
@@ -64,28 +67,24 @@ function Music({ user }) {
 
       if (code) {
         setLoading(true);
-        const codeVerifier = window.localStorage.getItem('spotify_code_verifier');
+        const codeVerifier = window.localStorage.getItem(codeVerifierKey);
         
         try {
-          const payload = {
+          const response = await fetch(TOKEN_ENDPOINT, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Type': 'application/json',
             },
-            body: new URLSearchParams({
-              client_id: CLIENT_ID,
-              grant_type: 'authorization_code',
+            body: JSON.stringify({
               code: code,
-              redirect_uri: REDIRECT_URI,
-              code_verifier: codeVerifier,
+              codeVerifier: codeVerifier,
             }),
-          };
+          });
 
-          const response = await fetch(TOKEN_ENDPOINT, payload);
           const data = await response.json();
 
           if (data.access_token) {
-            window.localStorage.setItem("spotify_token", data.access_token);
+            window.localStorage.setItem(userStorageKey, data.access_token);
             setToken(data.access_token);
             fetchSpotifyData(data.access_token);
             // Pulisce l'URL mantenendo il path corretto per GitHub Pages
@@ -104,7 +103,7 @@ function Music({ user }) {
     };
 
     handleCallback();
-  }, []);
+  }, [userStorageKey, codeVerifierKey]);
 
   // Debounce per la ricerca - versione semplificata
   useEffect(() => {
@@ -113,7 +112,7 @@ function Music({ user }) {
       return;
     }
 
-    const currentToken = window.localStorage.getItem("spotify_token");
+    const currentToken = window.localStorage.getItem(userStorageKey);
     if (!currentToken) {
       console.warn("Token non trovato in localStorage");
       return;
@@ -197,7 +196,7 @@ function Music({ user }) {
     const codeVerifier = generateRandomString(64);
     const hashed = await sha256(codeVerifier);
     const codeChallenge = base64encode(hashed);
-    window.localStorage.setItem('spotify_code_verifier', codeVerifier);
+    window.localStorage.setItem(codeVerifierKey, codeVerifier);
 
     const params = {
       response_type: RESPONSE_TYPE,
@@ -221,8 +220,8 @@ function Music({ user }) {
     setSearchResults([]);
     setSearchQuery("");
     setError(null);
-    window.localStorage.removeItem("spotify_token");
-    window.localStorage.removeItem("spotify_code_verifier");
+    window.localStorage.removeItem(userStorageKey);
+    window.localStorage.removeItem(codeVerifierKey);
   };
 
   const searchTracks = async (query) => {
@@ -238,7 +237,8 @@ function Music({ user }) {
 
     setIsSearching(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      const currentToken = window.localStorage.getItem(userStorageKey);
+      const headers = { Authorization: `Bearer ${currentToken}` };
       const response = await fetch(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=20`,
         { headers }
