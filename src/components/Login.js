@@ -52,9 +52,6 @@ function Login({ onLogin }) {
       localStorage.removeItem(`lifeplanner_habits_${id}`);
       localStorage.removeItem(`lifeplanner_goals_${id}`);
       localStorage.removeItem(`lifeplanner_diet_${id}`);
-      // Cleanup Spotify account data
-      localStorage.removeItem(`spotify_token_${id}`);
-      localStorage.removeItem(`code_verifier_${id}`);
       setUsers(updatedUsers);
     }
   };
