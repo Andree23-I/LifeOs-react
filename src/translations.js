@@ -3,6 +3,7 @@ export const translations = {
     // Sidebar
     Dashboard: "Dashboard",
     Diet: "Diet",
+    Groceries: "Groceries",
     Member: "Member",
     Logout: "Logout",
     // Login
@@ -77,11 +78,17 @@ export const translations = {
     activityMod: "Moderate (3-5 days/week)",
     activityActive: "Active (6-7 days/week)",
     activityVery: "Very Active (Athlete)",
+    // Groceries
+    addGrocery: "Add item...",
+    noGroceries: "Your list is empty!",
+    clearCompleted: "Clear Completed",
+    myGroceries: "My Groceries",
   },
   it: {
     // Sidebar
     Dashboard: "Dashboard",
     Diet: "Dieta",
+    Groceries: "Spesa",
     Member: "Membro",
     Logout: "Esci",
     // Login
@@ -156,5 +163,10 @@ export const translations = {
     activityMod: "Moderato (3-5 gg/sett)",
     activityActive: "Attivo (6-7 gg/sett)",
     activityVery: "Molto Attivo (Atleta)",
+    // Groceries
+    addGrocery: "Aggiungi prodotto...",
+    noGroceries: "La tua lista è vuota!",
+    clearCompleted: "Rimuovi Completati",
+    myGroceries: "La mia Spesa",
   }
 };
