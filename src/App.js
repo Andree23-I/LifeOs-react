@@ -9,6 +9,7 @@ import Login from './components/Login';
 import { SettingsContext } from './contexts/SettingsContext';
 
 function App() {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const { theme, toggleTheme, language, toggleLanguage } = useContext(SettingsContext);
@@ -28,13 +29,13 @@ function App() {
   const handleLogout = () => {
     // Logout dal server
     if (currentUser?.adminSessionId) {
-      fetch('https://web-production-ff7a6.up.railway.app/api/sessions/logout', {
+      fetch(`${API_URL}/api/sessions/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.adminSessionId })
       }).catch(err => console.log('Server logout failed:', err));
     } else if (currentUser?.id) {
-      fetch('https://web-production-ff7a6.up.railway.app/api/sessions/logout', {
+      fetch(`${API_URL}/api/sessions/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.id })

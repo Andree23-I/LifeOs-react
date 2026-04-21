@@ -4,6 +4,7 @@ import { SettingsContext } from '../contexts/SettingsContext';
 import { translations } from '../translations';
 
 function Login({ onLogin }) {
+  const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
   const [users, setUsers] = useState([]);
   const [newUsername, setNewUsername] = useState('');
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
@@ -29,7 +30,7 @@ function Login({ onLogin }) {
     setNewUsername('');
     
     // Registra sessione sul server
-    fetch('https://web-production-ff7a6.up.railway.app/api/sessions/register', {
+    fetch(`${API_URL}/api/sessions/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: newUser.id, userName: newUser.name })
@@ -44,7 +45,7 @@ function Login({ onLogin }) {
     setAdminError('');
     
     try {
-      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/login', {
+      const res = await fetch(`${API_URL}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: adminPassword })
@@ -76,7 +77,7 @@ function Login({ onLogin }) {
 
   const handleSelectUser = (user) => {
     // Registra sessione sul server
-    fetch('https://web-production-ff7a6.up.railway.app/api/sessions/register', {
+    fetch(`${API_URL}/api/sessions/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, userName: user.name })
