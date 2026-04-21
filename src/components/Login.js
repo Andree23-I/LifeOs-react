@@ -3,8 +3,9 @@ import './Login.css';
 import { SettingsContext } from '../contexts/SettingsContext';
 import { translations } from '../translations';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
+
 function Login({ onLogin }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
   const [users, setUsers] = useState([]);
   const [newUsername, setNewUsername] = useState('');
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);

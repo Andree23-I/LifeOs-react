@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -11,6 +12,7 @@ const ADMIN_IP = '101.56.163.116';
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../build')));
 
 // Active sessions tracking
 const activeSessions = new Map();
@@ -209,6 +211,11 @@ app.post('/api/admin/stats', (req, res) => {
       )
     }
   });
+});
+
+// Serve frontend - Catch-all route must be last
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {

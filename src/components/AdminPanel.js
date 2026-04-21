@@ -3,8 +3,9 @@ import './AdminPanel.css';
 
 
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
+
 function AdminPanel({ adminSessionId, onLogout }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app';
   const [activeSessions, setActiveSessions] = useState([]);
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({ activeUsers: 0, totalSessionsToday: 0, uniqueIPs: 0 });
