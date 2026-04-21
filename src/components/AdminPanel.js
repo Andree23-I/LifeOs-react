@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './AdminPanel.css';
-import { SettingsContext } from '../contexts/SettingsContext';
-import { translations } from '../translations';
+
+
 
 function AdminPanel({ adminSessionId, onLogout }) {
   const [activeSessions, setActiveSessions] = useState([]);
@@ -11,10 +11,10 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const [activeTab, setActiveTab] = useState('sessions');
   const [error, setError] = useState('');
 
-  const { language } = useContext(SettingsContext);
-  const t = translations[language];
 
-  const fetchSessions = async () => {
+
+
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/sessions', {
@@ -32,9 +32,9 @@ function AdminPanel({ adminSessionId, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminSessionId]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/history', {
@@ -52,9 +52,9 @@ function AdminPanel({ adminSessionId, onLogout }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [adminSessionId]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/stats', {
         method: 'POST',
@@ -68,7 +68,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
     } catch (err) {
       setError(err.message);
     }
-  };
+  }, [adminSessionId]);
 
   const handleDisconnect = async (sessionId) => {
     if (!window.confirm('Sei sicuro di voler disconnettere questo utente?')) return;
@@ -96,7 +96,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
       fetchStats();
     }, 5000); // Aggiorna ogni 5 secondi
     return () => clearInterval(interval);
-  }, [adminSessionId]);
+  }, [fetchSessions, fetchStats]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -109,7 +109,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
     <div className="admin-panel fade-in">
       <header className="admin-header">
         <div className="admin-title">
-          <h1>🔐 Pannello Amministrativo</h1>
+          <h1>🔐 Pannello Amministrativo {loading && <small style={{fontSize: '0.8rem', opacity: 0.7}}>(Aggiornamento...)</small>}</h1>
           <p>Gestisci il sito e monitora gli utenti attivi</p>
         </div>
         <button className="btn-logout" onClick={onLogout}>Esci da Admin</button>

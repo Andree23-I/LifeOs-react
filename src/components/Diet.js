@@ -51,12 +51,12 @@ function Diet({ user }) {
     const savedLog = JSON.parse(localStorage.getItem(`lifeplanner_dietlog_${user.id}`)) || [];
     if (savedStats) setStats(savedStats);
     setFoodLog(savedLog);
-  }, [user.id]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
     calculateAll(stats);
-  }, [stats, user.id]);
+  }, [stats, user]);
 
   const saveStats = (updatedStats) => {
     localStorage.setItem(`lifeplanner_dietstats_${user.id}`, JSON.stringify(updatedStats));

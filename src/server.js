@@ -6,7 +6,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const ADMIN_IP = '192.168.0.173';
+const ADMIN_IP = '101.56.163.116';
 
 // Middleware
 app.use(cors());
@@ -70,7 +70,7 @@ app.post('/api/admin/login', (req, res) => {
   if (clientIP !== ADMIN_IP) {
     return res.status(403).json({ 
       success: false, 
-      error: 'IP non autorizzato. Solo il tuo IP (192.168.0.173) può accedere all\'area admin.',
+      error: 'IP non autorizzato. Solo il tuo IP (101.56.163.116) può accedere all\'area admin.',
       receivedIP: clientIP
     });
   }
