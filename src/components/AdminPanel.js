@@ -17,7 +17,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/sessions', {
+      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
@@ -37,7 +37,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/history', {
+      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
@@ -56,7 +56,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/stats', {
+      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
@@ -74,7 +74,7 @@ function AdminPanel({ adminSessionId, onLogout }) {
     if (!window.confirm('Sei sicuro di voler disconnettere questo utente?')) return;
     
     try {
-      const res = await fetch('http://localhost:5000/api/admin/disconnect', {
+      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId, sessionIdToDisconnect: sessionId })

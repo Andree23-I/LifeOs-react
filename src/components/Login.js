@@ -29,7 +29,7 @@ function Login({ onLogin }) {
     setNewUsername('');
     
     // Registra sessione sul server
-    fetch('http://localhost:5000/api/sessions/register', {
+    fetch('https://web-production-ff7a6.up.railway.app/api/sessions/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: newUser.id, userName: newUser.name })
@@ -44,7 +44,7 @@ function Login({ onLogin }) {
     setAdminError('');
     
     try {
-      const res = await fetch('http://localhost:5000/api/admin/login', {
+      const res = await fetch('https://web-production-ff7a6.up.railway.app/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: adminPassword })
@@ -76,7 +76,7 @@ function Login({ onLogin }) {
 
   const handleSelectUser = (user) => {
     // Registra sessione sul server
-    fetch('http://localhost:5000/api/sessions/register', {
+    fetch('https://web-production-ff7a6.up.railway.app/api/sessions/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, userName: user.name })

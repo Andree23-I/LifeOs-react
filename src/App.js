@@ -28,13 +28,13 @@ function App() {
   const handleLogout = () => {
     // Logout dal server
     if (currentUser?.adminSessionId) {
-      fetch('http://localhost:5000/api/sessions/logout', {
+      fetch('https://web-production-ff7a6.up.railway.app/api/sessions/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.adminSessionId })
       }).catch(err => console.log('Server logout failed:', err));
     } else if (currentUser?.id) {
-      fetch('http://localhost:5000/api/sessions/logout', {
+      fetch('https://web-production-ff7a6.up.railway.app/api/sessions/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.id })
