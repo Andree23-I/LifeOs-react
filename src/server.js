@@ -70,7 +70,7 @@ app.post('/api/admin/login', (req, res) => {
   if (clientIP !== ADMIN_IP) {
     return res.status(403).json({ 
       success: false, 
-      error: 'IP non autorizzato. Solo il tuo IP (101.56.163.116) può accedere all\'area admin.',
+      error: 'Accesso negato',
       receivedIP: clientIP
     });
   }
