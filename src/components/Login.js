@@ -8,6 +8,8 @@ function Login({ onLogin }) {
   const [newUsername, setNewUsername] = useState('');
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState('');
 
   const { language } = useContext(SettingsContext);
   const t = translations[language];
@@ -25,20 +27,61 @@ function Login({ onLogin }) {
     localStorage.setItem('lifeplanner_users', JSON.stringify(updatedUsers));
     setUsers(updatedUsers);
     setNewUsername('');
+    
+    // Registra sessione sul server
+    fetch('http://localhost:5000/api/sessions/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: newUser.id, userName: newUser.name })
+    }).catch(err => console.log('Sessione non registrata:', err));
+    
     onLogin(newUser);
   };
 
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
-    if (adminPassword === '1234') {
-      onLogin({ id: 'admin', name: 'Admin', isAdmin: true });
-    } else {
-      alert('Password errata!');
-      setAdminPassword('');
+    setAdminLoading(true);
+    setAdminError('');
+    
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setAdminError(data.error || 'Errore nella verifica');
+        setAdminPassword('');
+        return;
+      }
+      
+      if (data.success) {
+        onLogin({ 
+          id: 'admin', 
+          name: 'Admin', 
+          isAdmin: true,
+          adminSessionId: data.sessionId
+        });
+      }
+    } catch (err) {
+      setAdminError('Errore di connessione al server');
+      console.error(err);
+    } finally {
+      setAdminLoading(false);
     }
   };
 
   const handleSelectUser = (user) => {
+    // Registra sessione sul server
+    fetch('http://localhost:5000/api/sessions/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, userName: user.name })
+    }).catch(err => console.log('Sessione non registrata:', err));
+    
     onLogin(user);
   };
 
@@ -108,6 +151,11 @@ function Login({ onLogin }) {
             </button>
           ) : (
             <form onSubmit={handleAdminLogin} className="admin-login-form fade-in">
+               {adminError && (
+                 <div className="admin-error">
+                   ⚠️ {adminError}
+                 </div>
+               )}
                <input
                  type="password"
                  placeholder={t.adminPasswordPlaceholder}
@@ -115,10 +163,26 @@ function Login({ onLogin }) {
                  onChange={(e) => setAdminPassword(e.target.value)}
                  className="task-input"
                  autoFocus
+                 disabled={adminLoading}
                />
                <div className="admin-btn-group">
-                 <button type="submit" className="btn-primary" style={{flex: 2}}>{t.login}</button>
-                 <button type="button" className="btn-secondary" style={{flex: 1}} onClick={() => { setShowAdminPrompt(false); setAdminPassword(''); }}>{t.cancel}</button>
+                 <button 
+                   type="submit" 
+                   className="btn-primary" 
+                   style={{flex: 2}}
+                   disabled={adminLoading}
+                 >
+                   {adminLoading ? 'Verifica...' : t.login}
+                 </button>
+                 <button 
+                   type="button" 
+                   className="btn-secondary" 
+                   style={{flex: 1}} 
+                   onClick={() => { setShowAdminPrompt(false); setAdminPassword(''); setAdminError(''); }}
+                   disabled={adminLoading}
+                 >
+                   {t.cancel}
+                 </button>
                </div>
             </form>
           )}

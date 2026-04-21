@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Diet from './components/Diet';
 import Groceries from './components/Groceries';
+import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { SettingsContext } from './contexts/SettingsContext';
 
@@ -25,12 +26,31 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Logout dal server
+    if (currentUser?.adminSessionId) {
+      fetch('http://localhost:5000/api/sessions/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentUser.adminSessionId })
+      }).catch(err => console.log('Server logout failed:', err));
+    } else if (currentUser?.id) {
+      fetch('http://localhost:5000/api/sessions/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentUser.id })
+      }).catch(err => console.log('Server logout failed:', err));
+    }
+    
     setCurrentUser(null);
     setCurrentView('dashboard');
     sessionStorage.removeItem('lifeplanner_active_user');
   };
 
   const renderView = () => {
+    if (currentUser?.isAdmin) {
+      return <AdminPanel adminSessionId={currentUser.adminSessionId} onLogout={handleLogout} />;
+    }
+    
     switch(currentView) {
       case 'dashboard': return <Dashboard user={currentUser} />;
       case 'diet': return <Diet user={currentUser} />;
@@ -45,21 +65,25 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar 
-        currentView={currentView} 
-        setCurrentView={setCurrentView} 
-        user={currentUser}
-        onLogout={handleLogout}
-      />
-      <main className="main-content">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
-          <button onClick={toggleLanguage} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
-            {language === 'en' ? '🇮🇹 IT' : '🇬🇧 EN'}
-          </button>
-          <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
-            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-          </button>
-        </div>
+      {!currentUser?.isAdmin && (
+        <Sidebar 
+          currentView={currentView} 
+          setCurrentView={setCurrentView} 
+          user={currentUser}
+          onLogout={handleLogout}
+        />
+      )}
+      <main className="main-content" style={currentUser?.isAdmin ? { width: '100%' } : {}}>
+        {!currentUser?.isAdmin && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }}>
+            <button onClick={toggleLanguage} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+              {language === 'en' ? '🇮🇹 IT' : '🇬🇧 EN'}
+            </button>
+            <button onClick={toggleTheme} className="btn-secondary" style={{ padding: '0.4rem 0.8rem' }}>
+              {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            </button>
+          </div>
+        )}
         {renderView()}
       </main>
     </div>
