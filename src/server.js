@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 5000;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 5000;
 const ADMIN_IP = process.env.ADMIN_IP || '127.0.0.1'; // Permetti localhost di default
 
 // Middleware

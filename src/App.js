@@ -8,7 +8,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { SettingsContext } from './contexts/SettingsContext';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/';
+const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/').replace(/\/$/, '');
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -30,13 +30,13 @@ function App() {
   const handleLogout = () => {
     // Logout dal server
     if (currentUser?.adminSessionId) {
-      fetch(`${API_URL}api/sessions/logout`, {
+      fetch(`${API_URL}/api/sessions/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.adminSessionId })
       }).catch(err => console.log('Server logout failed:', err));
     } else if (currentUser?.id) {
-      fetch(`${API_URL}api/sessions/logout`, {
+      fetch(`${API_URL}/api/sessions/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: currentUser.id })
