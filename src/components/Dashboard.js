@@ -16,15 +16,25 @@ function Dashboard({ user }) {
     else setGreeting(t.goodEvening);
 
     // Load diet stats from localStorage scoped to this user
-    const savedDietData = JSON.parse(localStorage.getItem(`lifeplanner_diet_${user.id}`));
-    const today = new Date().toISOString().split('T')[0];
+    const savedStats = JSON.parse(localStorage.getItem(`lifeplanner_dietstats_${user.id}`));
+    const savedLog = JSON.parse(localStorage.getItem(`lifeplanner_dietlog_${user.id}`)) || [];
     
-    let dailyCalories = 0;
-    if (savedDietData && savedDietData.history && savedDietData.history[today]) {
-       dailyCalories = savedDietData.history[today].reduce((sum, item) => sum + parseInt(item.calories || 0), 0);
+    const dailyCalories = savedLog.reduce((sum, item) => sum + (parseInt(item.cals) || 0), 0);
+    
+    // Calcola il TDEE se disponibile nei savedStats, altrimenti usa un default ragionevole
+    let tdee = 2000;
+    if (savedStats) {
+      // Mifflin-St Jeor (stessa logica di Diet.js)
+      let calculatedBmr = (10 * savedStats.weight) + (6.25 * savedStats.height) - (5 * savedStats.age);
+      calculatedBmr += savedStats.gender === 'male' ? 5 : -161;
+      
+      const multipliers = { sedentary: 1.2, light: 1.375, mod: 1.55, active: 1.725, very: 1.9 };
+      const maintenance = Math.round(calculatedBmr * (multipliers[savedStats.activity] || 1.2));
+      
+      tdee = maintenance;
+      if (savedStats.goal === 'lose') tdee -= 500;
+      if (savedStats.goal === 'gain') tdee += 300;
     }
-    
-    const tdee = savedDietData?.tdee || 2000;
 
     setStats({ dailyCalories, tdee });
   }, [user.id, t.goodMorning, t.goodAfternoon, t.goodEvening]);

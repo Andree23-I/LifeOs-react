@@ -6,22 +6,25 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const ADMIN_IP = '101.56.163.116';
+const PORT = process.env.SERVER_PORT || 5000;
+const ADMIN_IP = process.env.ADMIN_IP || '127.0.0.1'; // Permetti localhost di default
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../build')));
 
+// Get client IP
+const getClientIP = (req) => {
+  // In sviluppo locale, spesso l'IP è ::1 o 127.0.0.1
+  let ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
+  if (ip === '::1' || ip === '::ffff:127.0.0.1') ip = '127.0.0.1';
+  return ip;
+};
+
 // Active sessions tracking
 const activeSessions = new Map();
 const sessionHistory = [];
-
-// Get client IP
-const getClientIP = (req) => {
-  return req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
-};
 
 // Health check
 app.get('/health', (req, res) => {
