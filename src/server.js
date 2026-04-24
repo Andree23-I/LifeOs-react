@@ -65,6 +65,19 @@ app.post('/api/sessions/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// Helper to verify admin access
+const isAdminAuthorized = (req, adminSessionId) => {
+  const clientIP = getClientIP(req);
+  const adminSession = activeSessions.get(adminSessionId);
+  
+  // Verifica IP (permette ADMIN_IP configurato o localhost)
+  const isIPValid = clientIP === ADMIN_IP || clientIP === '127.0.0.1';
+  // Verifica sessione
+  const isSessionValid = adminSession && adminSession.isAdmin && adminSession.isActive;
+  
+  return isIPValid && isSessionValid;
+};
+
 // Admin login with IP verification
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
@@ -72,7 +85,8 @@ app.post('/api/admin/login', (req, res) => {
   
   console.log(`Admin login attempt from IP: ${clientIP}`);
   
-  if (clientIP !== ADMIN_IP) {
+  // Permetti l'accesso se l'IP è quello configurato OPPURE se è localhost (per sviluppo)
+  if (clientIP !== ADMIN_IP && clientIP !== '127.0.0.1') {
     return res.status(403).json({ 
       success: false, 
       error: 'Accesso negato',
@@ -110,15 +124,9 @@ app.post('/api/admin/login', (req, res) => {
 // Get active sessions (admin only)
 app.post('/api/admin/sessions', (req, res) => {
   const { adminSessionId } = req.body;
-  const clientIP = getClientIP(req);
   
-  if (clientIP !== ADMIN_IP) {
-    return res.status(403).json({ error: 'Non autorizzato' });
-  }
-  
-  const adminSession = activeSessions.get(adminSessionId);
-  if (!adminSession?.isAdmin) {
-    return res.status(403).json({ error: 'Sessione admin non valida' });
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
   }
   
   const sessions = Array.from(activeSessions.values())
@@ -143,15 +151,9 @@ app.post('/api/admin/sessions', (req, res) => {
 // Get session history (admin only)
 app.post('/api/admin/history', (req, res) => {
   const { adminSessionId } = req.body;
-  const clientIP = getClientIP(req);
   
-  if (clientIP !== ADMIN_IP) {
-    return res.status(403).json({ error: 'Non autorizzato' });
-  }
-  
-  const adminSession = activeSessions.get(adminSessionId);
-  if (!adminSession?.isAdmin) {
-    return res.status(403).json({ error: 'Sessione admin non valida' });
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
   }
   
   res.json({ 
@@ -163,15 +165,9 @@ app.post('/api/admin/history', (req, res) => {
 // Disconnect user (admin only)
 app.post('/api/admin/disconnect', (req, res) => {
   const { adminSessionId, sessionIdToDisconnect } = req.body;
-  const clientIP = getClientIP(req);
   
-  if (clientIP !== ADMIN_IP) {
-    return res.status(403).json({ error: 'Non autorizzato' });
-  }
-  
-  const adminSession = activeSessions.get(adminSessionId);
-  if (!adminSession?.isAdmin) {
-    return res.status(403).json({ error: 'Sessione admin non valida' });
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
   }
   
   if (activeSessions.has(sessionIdToDisconnect)) {
@@ -187,15 +183,9 @@ app.post('/api/admin/disconnect', (req, res) => {
 // Get admin stats
 app.post('/api/admin/stats', (req, res) => {
   const { adminSessionId } = req.body;
-  const clientIP = getClientIP(req);
   
-  if (clientIP !== ADMIN_IP) {
-    return res.status(403).json({ error: 'Non autorizzato' });
-  }
-  
-  const adminSession = activeSessions.get(adminSessionId);
-  if (!adminSession?.isAdmin) {
-    return res.status(403).json({ error: 'Sessione admin non valida' });
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
   }
   
   const activeSessions_list = Array.from(activeSessions.values()).filter(s => s.isActive);
