@@ -1,3 +1,36 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import './AdminPanel.css';
+
+const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/').replace(/\/$/, '');
+
+function AdminPanel({ adminSessionId, onLogout }) {
+  const [activeSessions, setActiveSessions] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState({ activeUsers: 0, totalSessionsToday: 0, uniqueIPs: 0 });
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('sessions');
+  const [error, setError] = useState('');
+  // Stato per tool IP manuale
+  const [manualIP, setManualIP] = useState('');
+  const [ipAddMsg, setIpAddMsg] = useState('');
+  const [ipWhitelist, setIpWhitelist] = useState([]);
+
+  // Carica la whitelist IP admin
+  const fetchWhitelist = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/whitelist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId })
+      });
+      if (!res.ok) throw new Error('Errore nel recupero whitelist');
+      const data = await res.json();
+      setIpWhitelist(data.whitelist || []);
+    } catch (err) {
+      setIpWhitelist([]);
+    }
+  }, [adminSessionId]);
+
   // Rimuovi IP dalla whitelist
   const handleRemoveIP = async (ip) => {
     if (!window.confirm(`Rimuovere l'IP ${ip} dalla whitelist?`)) return;
@@ -18,39 +51,6 @@
       setLoading(false);
     }
   };
-import React, { useState, useEffect, useCallback } from 'react';
-import './AdminPanel.css';
-
-
-
-const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/').replace(/\/$/, '');
-
-function AdminPanel({ adminSessionId, onLogout }) {
-  const [activeSessions, setActiveSessions] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [stats, setStats] = useState({ activeUsers: 0, totalSessionsToday: 0, uniqueIPs: 0 });
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('sessions');
-  const [error, setError] = useState('');
-  // Stato per tool IP manuale
-  const [manualIP, setManualIP] = useState('');
-  const [ipAddMsg, setIpAddMsg] = useState('');
-  const [ipWhitelist, setIpWhitelist] = useState([]);
-    // Carica la whitelist IP admin
-    const fetchWhitelist = useCallback(async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/admin/whitelist`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adminSessionId })
-        });
-        if (!res.ok) throw new Error('Errore nel recupero whitelist');
-        const data = await res.json();
-        setIpWhitelist(data.whitelist || []);
-      } catch (err) {
-        setIpWhitelist([]);
-      }
-    }, [adminSessionId]);
   // Funzione per aggiungere IP manualmente
   const handleAddIP = async (e) => {
     e.preventDefault();
