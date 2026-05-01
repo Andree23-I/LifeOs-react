@@ -1,27 +1,3 @@
-// Endpoint per rimuovere un IP dalla whitelist admin
-app.post('/api/admin/remove-ip', (req, res) => {
-  const { adminSessionId, ip } = req.body;
-  if (!isAdminAuthorized(req, adminSessionId)) {
-    return res.status(403).json({ success: false, error: 'Non autorizzato' });
-  }
-  if (!ip || typeof ip !== 'string' || !adminIPWhitelist.has(ip)) {
-    return res.status(400).json({ success: false, error: 'IP non valido o non presente' });
-  }
-  // Non permettere di rimuovere l'IP di default (ADMIN_IP) o localhost
-  if (ip === ADMIN_IP || ip === '127.0.0.1') {
-    return res.status(400).json({ success: false, error: 'Non puoi rimuovere l\'IP di default o localhost' });
-  }
-  adminIPWhitelist.delete(ip);
-  res.json({ success: true, message: `IP ${ip} rimosso`, whitelist: Array.from(adminIPWhitelist) });
-});
-// Endpoint per ottenere la whitelist IP admin
-app.post('/api/admin/whitelist', (req, res) => {
-  const { adminSessionId } = req.body;
-  if (!isAdminAuthorized(req, adminSessionId)) {
-    return res.status(403).json({ success: false, error: 'Non autorizzato' });
-  }
-  res.json({ success: true, whitelist: Array.from(adminIPWhitelist) });
-});
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -160,6 +136,32 @@ app.post('/api/admin/allow-ip', (req, res) => {
   }
   adminIPWhitelist.add(ip);
   res.json({ success: true, message: `IP ${ip} autorizzato`, whitelist: Array.from(adminIPWhitelist) });
+});
+
+// Endpoint per rimuovere un IP dalla whitelist admin
+app.post('/api/admin/remove-ip', (req, res) => {
+  const { adminSessionId, ip } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  if (!ip || typeof ip !== 'string' || !adminIPWhitelist.has(ip)) {
+    return res.status(400).json({ success: false, error: 'IP non valido o non presente' });
+  }
+  // Non permettere di rimuovere l'IP di default (ADMIN_IP) o localhost
+  if (ip === ADMIN_IP || ip === '127.0.0.1') {
+    return res.status(400).json({ success: false, error: 'Non puoi rimuovere l\'IP di default o localhost' });
+  }
+  adminIPWhitelist.delete(ip);
+  res.json({ success: true, message: `IP ${ip} rimosso`, whitelist: Array.from(adminIPWhitelist) });
+});
+
+// Endpoint per ottenere la whitelist IP admin
+app.post('/api/admin/whitelist', (req, res) => {
+  const { adminSessionId } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  res.json({ success: true, whitelist: Array.from(adminIPWhitelist) });
 });
 
 // Get active sessions (admin only)
