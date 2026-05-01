@@ -1,3 +1,23 @@
+  // Rimuovi IP dalla whitelist
+  const handleRemoveIP = async (ip) => {
+    if (!window.confirm(`Rimuovere l'IP ${ip} dalla whitelist?`)) return;
+    setIpAddMsg('');
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/remove-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip })
+      });
+      if (!res.ok) throw new Error('Errore nella rimozione dell\'IP');
+      setIpAddMsg('IP rimosso con successo!');
+      fetchWhitelist();
+    } catch (err) {
+      setIpAddMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 import React, { useState, useEffect, useCallback } from 'react';
 import './AdminPanel.css';
 
@@ -12,6 +32,50 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('sessions');
   const [error, setError] = useState('');
+  // Stato per tool IP manuale
+  const [manualIP, setManualIP] = useState('');
+  const [ipAddMsg, setIpAddMsg] = useState('');
+  const [ipWhitelist, setIpWhitelist] = useState([]);
+    // Carica la whitelist IP admin
+    const fetchWhitelist = useCallback(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/whitelist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminSessionId })
+        });
+        if (!res.ok) throw new Error('Errore nel recupero whitelist');
+        const data = await res.json();
+        setIpWhitelist(data.whitelist || []);
+      } catch (err) {
+        setIpWhitelist([]);
+      }
+    }, [adminSessionId]);
+  // Funzione per aggiungere IP manualmente
+  const handleAddIP = async (e) => {
+    e.preventDefault();
+    setIpAddMsg('');
+    if (!manualIP) {
+      setIpAddMsg('Inserisci un IP valido.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/allow-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip: manualIP })
+      });
+      if (!res.ok) throw new Error('Errore nell\'aggiunta dell\'IP');
+      setIpAddMsg('IP autorizzato con successo!');
+      setManualIP('');
+      fetchWhitelist();
+    } catch (err) {
+      setIpAddMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -93,12 +157,14 @@ function AdminPanel({ adminSessionId, onLogout }) {
   useEffect(() => {
     fetchSessions();
     fetchStats();
+    fetchWhitelist();
     const interval = setInterval(() => {
       fetchSessions();
       fetchStats();
+      fetchWhitelist();
     }, 5000); // Aggiorna ogni 5 secondi
     return () => clearInterval(interval);
-  }, [fetchSessions, fetchStats]);
+  }, [fetchSessions, fetchStats, fetchWhitelist]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -118,6 +184,44 @@ function AdminPanel({ adminSessionId, onLogout }) {
       </header>
 
       {error && <div className="error-message">⚠️ {error}</div>}
+
+      {/* Tool inserimento IP manuale + visualizzazione whitelist */}
+      <div className="glass-panel ip-tool-panel" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
+        <form onSubmit={handleAddIP} style={{display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
+          <label htmlFor="manual-ip" style={{fontWeight: 600}}>Aggiungi IP autorizzato:</label>
+          <input
+            id="manual-ip"
+            type="text"
+            value={manualIP}
+            onChange={e => setManualIP(e.target.value)}
+            placeholder="es. 192.168.1.100"
+            style={{padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', minWidth: 180}}
+            disabled={loading}
+          />
+          <button type="submit" className="btn-primary-small" disabled={loading}>Autorizza IP</button>
+          {ipAddMsg && <span style={{marginLeft: 8, color: ipAddMsg.includes('successo') ? 'green' : 'red'}}>{ipAddMsg}</span>}
+        </form>
+        <div style={{marginTop: 12}}>
+          <strong>Whitelist IP admin:</strong>
+          <ul style={{margin: '0.5rem 0 0 1.2rem', padding: 0}}>
+            {ipWhitelist.length === 0 ? (
+              <li style={{color: '#888'}}>Nessun IP autorizzato</li>
+            ) : (
+              ipWhitelist.map(ip => (
+                <li key={ip} style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                  <code>{ip}</code>
+                  <button
+                    className="btn-danger-small"
+                    style={{marginLeft: 8, fontSize: '0.9rem', padding: '0.2rem 0.7rem'}}
+                    onClick={() => handleRemoveIP(ip)}
+                    disabled={loading}
+                  >Rimuovi</button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="stats-grid">

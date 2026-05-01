@@ -1,3 +1,27 @@
+// Endpoint per rimuovere un IP dalla whitelist admin
+app.post('/api/admin/remove-ip', (req, res) => {
+  const { adminSessionId, ip } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  if (!ip || typeof ip !== 'string' || !adminIPWhitelist.has(ip)) {
+    return res.status(400).json({ success: false, error: 'IP non valido o non presente' });
+  }
+  // Non permettere di rimuovere l'IP di default (ADMIN_IP) o localhost
+  if (ip === ADMIN_IP || ip === '127.0.0.1') {
+    return res.status(400).json({ success: false, error: 'Non puoi rimuovere l\'IP di default o localhost' });
+  }
+  adminIPWhitelist.delete(ip);
+  res.json({ success: true, message: `IP ${ip} rimosso`, whitelist: Array.from(adminIPWhitelist) });
+});
+// Endpoint per ottenere la whitelist IP admin
+app.post('/api/admin/whitelist', (req, res) => {
+  const { adminSessionId } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  res.json({ success: true, whitelist: Array.from(adminIPWhitelist) });
+});
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -8,6 +32,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || process.env.SERVER_PORT || 5000;
 const ADMIN_IP = process.env.ADMIN_IP || '127.0.0.1'; // Permetti localhost di default
+// Whitelist dinamica di IP admin
+const adminIPWhitelist = new Set([
+  ADMIN_IP,
+  '127.0.0.1',
+]);
 
 // Middleware
 app.use(cors());
@@ -69,12 +98,10 @@ app.post('/api/sessions/logout', (req, res) => {
 const isAdminAuthorized = (req, adminSessionId) => {
   const clientIP = getClientIP(req);
   const adminSession = activeSessions.get(adminSessionId);
-  
-  // Verifica IP (permette ADMIN_IP configurato o localhost)
-  const isIPValid = clientIP === ADMIN_IP || clientIP === '127.0.0.1';
+  // Verifica IP (presente in whitelist)
+  const isIPValid = adminIPWhitelist.has(clientIP);
   // Verifica sessione
   const isSessionValid = adminSession && adminSession.isAdmin && adminSession.isActive;
-  
   return isIPValid && isSessionValid;
 };
 
@@ -85,8 +112,8 @@ app.post('/api/admin/login', (req, res) => {
   
   console.log(`Admin login attempt from IP: ${clientIP}`);
   
-  // Permetti l'accesso se l'IP è quello configurato OPPURE se è localhost (per sviluppo)
-  if (clientIP !== ADMIN_IP && clientIP !== '127.0.0.1') {
+  // Permetti l'accesso solo se l'IP è in whitelist
+  if (!adminIPWhitelist.has(clientIP)) {
     return res.status(403).json({ 
       success: false, 
       error: 'Accesso negato',
@@ -117,8 +144,22 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ 
     success: true, 
     sessionId: adminSessionId,
-    adminIP: ADMIN_IP
+    adminIP: ADMIN_IP,
+    whitelist: Array.from(adminIPWhitelist)
   });
+});
+
+// Endpoint per aggiungere un IP alla whitelist admin
+app.post('/api/admin/allow-ip', (req, res) => {
+  const { adminSessionId, ip } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  if (!ip || typeof ip !== 'string' || !/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
+    return res.status(400).json({ success: false, error: 'IP non valido' });
+  }
+  adminIPWhitelist.add(ip);
+  res.json({ success: true, message: `IP ${ip} autorizzato`, whitelist: Array.from(adminIPWhitelist) });
 });
 
 // Get active sessions (admin only)
