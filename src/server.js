@@ -23,6 +23,7 @@ app.use(express.static(path.join(__dirname, '../build')));
 const getClientIP = (req) => {
   // In sviluppo locale, spesso l'IP è ::1 o 127.0.0.1
   let ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
+  console.log(`[DEBUG] Client IP detection - Original: ${req.headers['x-forwarded-for'] || 'none'}, Socket: ${req.socket.remoteAddress}, Final: ${ip}`);
   if (ip === '::1' || ip === '::ffff:127.0.0.1') ip = '127.0.0.1';
   return ip;
 };
@@ -225,28 +226,33 @@ app.post('/api/admin/disconnect', (req, res) => {
 
 // Get admin stats
 app.post('/api/admin/stats', (req, res) => {
-  const { adminSessionId } = req.body;
-  
-  if (!isAdminAuthorized(req, adminSessionId)) {
-    return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
-  }
-  
-  const activeSessions_list = Array.from(activeSessions.values()).filter(s => s.isActive);
-  
-  res.json({
-    success: true,
-    stats: {
-      activeUsers: activeSessions_list.length,
-      totalSessionsToday: sessionHistory.length,
-      uniqueIPs: new Set(sessionHistory.map(s => s.ip)).size,
-      sessionsByIP: Object.fromEntries(
-        Array.from(sessionHistory.reduce((m, s) => {
-          m.set(s.ip, (m.get(s.ip) || 0) + 1);
-          return m;
-        }, new Map()))
-      )
+  try {
+    const { adminSessionId } = req.body;
+    
+    if (!isAdminAuthorized(req, adminSessionId)) {
+      return res.status(403).json({ error: 'Non autorizzato o sessione non valida' });
     }
-  });
+    
+    const activeSessions_list = Array.from(activeSessions.values()).filter(s => s.isActive);
+    
+    res.json({
+      success: true,
+      stats: {
+        activeUsers: activeSessions_list.length,
+        totalSessionsToday: sessionHistory.length,
+        uniqueIPs: new Set(sessionHistory.map(s => s.ip)).size,
+        sessionsByIP: Object.fromEntries(
+          Array.from(sessionHistory.reduce((m, s) => {
+            if (s && s.ip) m.set(s.ip, (m.get(s.ip) || 0) + 1);
+            return m;
+          }, new Map()))
+        )
+      }
+    });
+  } catch (error) {
+    console.error('Error in /api/admin/stats:', error);
+    res.status(500).json({ success: false, error: 'Errore interno del server' });
+  }
 });
 
 // Serve frontend - Catch-all route must be last

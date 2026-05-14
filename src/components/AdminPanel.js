@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './AdminPanel.css';
 
-const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/').replace(/\/$/, '');
+const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app').replace(/\/$/, '');
 
 function AdminPanel({ adminSessionId, onLogout }) {
   const [activeSessions, setActiveSessions] = useState([]);

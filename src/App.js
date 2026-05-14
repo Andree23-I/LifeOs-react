@@ -8,7 +8,7 @@ import AdminPanel from './components/AdminPanel';
 import Login from './components/Login';
 import { SettingsContext } from './contexts/SettingsContext';
 
-const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app/').replace(/\/$/, '');
+const API_URL = (process.env.REACT_APP_API_URL || 'https://web-production-357c.up.railway.app').replace(/\/$/, '');
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
