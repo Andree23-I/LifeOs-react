@@ -14,6 +14,11 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const [manualIP, setManualIP] = useState('');
   const [ipAddMsg, setIpAddMsg] = useState('');
   const [ipWhitelist, setIpWhitelist] = useState([]);
+  const [manualBlockIP, setManualBlockIP] = useState('');
+  const [ipBlockMsg, setIpBlockMsg] = useState('');
+  const [ipBlacklist, setIpBlacklist] = useState([]);
+
+  const isValidIP = (ip) => /^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
 
   // Carica la whitelist IP admin
   const fetchWhitelist = useCallback(async () => {
@@ -28,6 +33,22 @@ function AdminPanel({ adminSessionId, onLogout }) {
       setIpWhitelist(data.whitelist || []);
     } catch (err) {
       setIpWhitelist([]);
+    }
+  }, [adminSessionId]);
+
+  // Carica la blacklist IP admin
+  const fetchBlacklist = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/blacklist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId })
+      });
+      if (!res.ok) throw new Error('Errore nel recupero blacklist');
+      const data = await res.json();
+      setIpBlacklist(data.blacklist || []);
+    } catch (err) {
+      setIpBlacklist([]);
     }
   }, [adminSessionId]);
 
@@ -80,7 +101,54 @@ function AdminPanel({ adminSessionId, onLogout }) {
 
 
 
-  const fetchSessions = useCallback(async () => {
+  const handleAddBlockedIP = async (e) => {
+    e.preventDefault();
+    setIpBlockMsg('');
+    if (!manualBlockIP || !isValidIP(manualBlockIP)) {
+      setIpBlockMsg('Inserisci un IP valido.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/block-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip: manualBlockIP })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore nel blocco dell\'IP');
+      setIpBlockMsg('IP bloccato con successo!');
+      setManualBlockIP('');
+      fetchBlacklist();
+    } catch (err) {
+      setIpBlockMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveBlockedIP = async (ip) => {
+    if (!window.confirm(`Sbloccare l'IP ${ip}?`)) return;
+    setIpBlockMsg('');
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/unblock-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore nello sblocco dell\'IP');
+      setIpBlockMsg('IP sbloccato con successo!');
+      fetchBlacklist();
+    } catch (err) {
+      setIpBlockMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/sessions`, {
@@ -158,13 +226,15 @@ function AdminPanel({ adminSessionId, onLogout }) {
     fetchSessions();
     fetchStats();
     fetchWhitelist();
+    fetchBlacklist();
     const interval = setInterval(() => {
       fetchSessions();
       fetchStats();
       fetchWhitelist();
+      fetchBlacklist();
     }, 5000); // Aggiorna ogni 5 secondi
     return () => clearInterval(interval);
-  }, [fetchSessions, fetchStats, fetchWhitelist]);
+  }, [fetchSessions, fetchStats, fetchWhitelist, fetchBlacklist]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -216,6 +286,43 @@ function AdminPanel({ adminSessionId, onLogout }) {
                     onClick={() => handleRemoveIP(ip)}
                     disabled={loading}
                   >Rimuovi</button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      </div>
+
+      <div className="glass-panel ip-tool-panel" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
+        <form onSubmit={handleAddBlockedIP} style={{display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
+          <label htmlFor="block-ip" style={{fontWeight: 600}}>Blocca IP:</label>
+          <input
+            id="block-ip"
+            type="text"
+            value={manualBlockIP}
+            onChange={e => setManualBlockIP(e.target.value)}
+            placeholder="es. 192.168.1.100"
+            style={{padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', minWidth: 180}}
+            disabled={loading}
+          />
+          <button type="submit" className="btn-danger-small" disabled={loading}>Blocca IP</button>
+          {ipBlockMsg && <span style={{marginLeft: 8, color: ipBlockMsg.includes('successo') ? 'green' : 'red'}}>{ipBlockMsg}</span>}
+        </form>
+        <div style={{marginTop: 12}}>
+          <strong>Blacklist IP:</strong>
+          <ul style={{margin: '0.5rem 0 0 1.2rem', padding: 0}}>
+            {ipBlacklist.length === 0 ? (
+              <li style={{color: '#888'}}>Nessun IP bloccato</li>
+            ) : (
+              ipBlacklist.map(ip => (
+                <li key={ip} style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                  <code>{ip}</code>
+                  <button
+                    className="btn-secondary"
+                    style={{marginLeft: 8, fontSize: '0.9rem', padding: '0.2rem 0.7rem'}}
+                    onClick={() => handleRemoveBlockedIP(ip)}
+                    disabled={loading}
+                  >Sblocca</button>
                 </li>
               ))
             )}

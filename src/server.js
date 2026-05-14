@@ -14,6 +14,14 @@ const adminIPWhitelist = new Set([
   '127.0.0.1',
 ]);
 
+// Blacklist IP del sito
+const adminIPBlacklist = new Set();
+
+const isIPBlacklisted = (req) => {
+  const clientIP = getClientIP(req);
+  return adminIPBlacklist.has(clientIP);
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -41,6 +49,11 @@ app.get('/health', (req, res) => {
 app.post('/api/sessions/register', (req, res) => {
   const { userId, userName } = req.body;
   const clientIP = getClientIP(req);
+
+  if (adminIPBlacklist.has(clientIP)) {
+    return res.status(403).json({ success: false, error: 'Accesso negato: IP bloccato in blacklist' });
+  }
+
   const sessionId = `${userId}_${Date.now()}`;
   
   const session = {
@@ -89,6 +102,13 @@ app.post('/api/admin/login', (req, res) => {
   
   console.log(`Admin login attempt from IP: ${clientIP}`);
   
+  if (adminIPBlacklist.has(clientIP)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Accesso admin negato: IP bloccato in blacklist'
+    });
+  }
+
   // Permetti l'accesso solo se l'IP è in whitelist
   if (!adminIPWhitelist.has(clientIP)) {
     return res.status(403).json({ 
@@ -154,6 +174,32 @@ app.post('/api/admin/remove-ip', (req, res) => {
   }
   adminIPWhitelist.delete(ip);
   res.json({ success: true, message: `IP ${ip} rimosso`, whitelist: Array.from(adminIPWhitelist) });
+});
+
+// Endpoint per bloccare un IP
+app.post('/api/admin/block-ip', (req, res) => {
+  const { adminSessionId, ip } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  if (!ip || typeof ip !== 'string' || !/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
+    return res.status(400).json({ success: false, error: 'IP non valido' });
+  }
+  adminIPBlacklist.add(ip);
+  res.json({ success: true, message: `IP ${ip} bloccato`, blacklist: Array.from(adminIPBlacklist) });
+});
+
+// Endpoint per sbloccare un IP
+app.post('/api/admin/unblock-ip', (req, res) => {
+  const { adminSessionId, ip } = req.body;
+  if (!isAdminAuthorized(req, adminSessionId)) {
+    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  }
+  if (!ip || typeof ip !== 'string' || !adminIPBlacklist.has(ip)) {
+    return res.status(400).json({ success: false, error: 'IP non valido o non presente' });
+  }
+  adminIPBlacklist.delete(ip);
+  res.json({ success: true, message: `IP ${ip} sbloccato`, blacklist: Array.from(adminIPBlacklist) });
 });
 
 // Endpoint per ottenere la whitelist IP admin
