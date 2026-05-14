@@ -63,9 +63,10 @@ function AdminPanel({ adminSessionId, onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId, ip })
       });
-      if (!res.ok) throw new Error('Errore nella rimozione dell\'IP');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore nella rimozione dell\'IP');
       setIpAddMsg('IP rimosso con successo!');
-      fetchWhitelist();
+      setIpWhitelist(data.whitelist || []);
     } catch (err) {
       setIpAddMsg(err.message);
     } finally {
@@ -87,10 +88,11 @@ function AdminPanel({ adminSessionId, onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId, ip: manualIP })
       });
-      if (!res.ok) throw new Error('Errore nell\'aggiunta dell\'IP');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore nell\'aggiunta dell\'IP');
       setIpAddMsg('IP autorizzato con successo!');
       setManualIP('');
-      fetchWhitelist();
+      setIpWhitelist(data.whitelist || []);
     } catch (err) {
       setIpAddMsg(err.message);
     } finally {

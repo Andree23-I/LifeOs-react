@@ -148,15 +148,30 @@ app.post('/api/admin/login', (req, res) => {
 
 // Endpoint per aggiungere un IP alla whitelist admin
 app.post('/api/admin/allow-ip', (req, res) => {
-  const { adminSessionId, ip } = req.body;
-  if (!isAdminAuthorized(req, adminSessionId)) {
-    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  try {
+    const { adminSessionId, ip } = req.body;
+    if (!isAdminAuthorized(req, adminSessionId)) {
+      return res.status(403).json({ success: false, error: 'Non autorizzato' });
+    }
+    
+    // Validazione più flessibile: accetta IPv4 e IPv6 base, rimuove spazi
+    const cleanIP = ip?.trim();
+    if (!cleanIP || cleanIP.length < 3) {
+      return res.status(400).json({ success: false, error: 'IP non valido' });
+    }
+    
+    adminIPWhitelist.add(cleanIP);
+    console.log(`[ADMIN] IP added to whitelist: ${cleanIP}. New whitelist size: ${adminIPWhitelist.size}`);
+    
+    res.json({ 
+      success: true, 
+      message: `IP ${cleanIP} autorizzato`, 
+      whitelist: Array.from(adminIPWhitelist) 
+    });
+  } catch (error) {
+    console.error('Error in /api/admin/allow-ip:', error);
+    res.status(500).json({ success: false, error: 'Errore interno del server' });
   }
-  if (!ip || typeof ip !== 'string' || !/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
-    return res.status(400).json({ success: false, error: 'IP non valido' });
-  }
-  adminIPWhitelist.add(ip);
-  res.json({ success: true, message: `IP ${ip} autorizzato`, whitelist: Array.from(adminIPWhitelist) });
 });
 
 // Endpoint per rimuovere un IP dalla whitelist admin
