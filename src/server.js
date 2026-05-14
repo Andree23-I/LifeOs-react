@@ -191,30 +191,65 @@ app.post('/api/admin/remove-ip', (req, res) => {
   res.json({ success: true, message: `IP ${ip} rimosso`, whitelist: Array.from(adminIPWhitelist) });
 });
 
-// Endpoint per bloccare un IP
+// Endpoint per bloccare un IP (Blacklist)
 app.post('/api/admin/block-ip', (req, res) => {
-  const { adminSessionId, ip } = req.body;
-  if (!isAdminAuthorized(req, adminSessionId)) {
-    return res.status(403).json({ success: false, error: 'Non autorizzato' });
+  try {
+    const { adminSessionId, ip } = req.body;
+    if (!isAdminAuthorized(req, adminSessionId)) {
+      return res.status(403).json({ success: false, error: 'Non autorizzato' });
+    }
+    
+    const cleanIP = ip?.trim();
+    if (!cleanIP || cleanIP.length < 3) {
+      return res.status(400).json({ success: false, error: 'IP non valido' });
+    }
+    
+    adminIPBlacklist.add(cleanIP);
+    console.log(`[ADMIN] IP added to blacklist: ${cleanIP}. New blacklist size: ${adminIPBlacklist.size}`);
+    
+    res.json({ 
+      success: true, 
+      message: `IP ${cleanIP} bloccato`, 
+      blacklist: Array.from(adminIPBlacklist) 
+    });
+  } catch (error) {
+    console.error('Error in /api/admin/block-ip:', error);
+    res.status(500).json({ success: false, error: 'Errore interno del server' });
   }
-  if (!ip || typeof ip !== 'string' || !/^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
-    return res.status(400).json({ success: false, error: 'IP non valido' });
-  }
-  adminIPBlacklist.add(ip);
-  res.json({ success: true, message: `IP ${ip} bloccato`, blacklist: Array.from(adminIPBlacklist) });
 });
 
 // Endpoint per sbloccare un IP
 app.post('/api/admin/unblock-ip', (req, res) => {
-  const { adminSessionId, ip } = req.body;
+  try {
+    const { adminSessionId, ip } = req.body;
+    if (!isAdminAuthorized(req, adminSessionId)) {
+      return res.status(403).json({ success: false, error: 'Non autorizzato' });
+    }
+    
+    const cleanIP = ip?.trim();
+    if (!cleanIP || !adminIPBlacklist.has(cleanIP)) {
+      return res.status(400).json({ success: false, error: 'IP non presente in blacklist' });
+    }
+    
+    adminIPBlacklist.delete(cleanIP);
+    res.json({ 
+      success: true, 
+      message: `IP ${cleanIP} sbloccato`, 
+      blacklist: Array.from(adminIPBlacklist) 
+    });
+  } catch (error) {
+    console.error('Error in /api/admin/unblock-ip:', error);
+    res.status(500).json({ success: false, error: 'Errore interno del server' });
+  }
+});
+
+// Endpoint per ottenere la blacklist IP
+app.post('/api/admin/blacklist', (req, res) => {
+  const { adminSessionId } = req.body;
   if (!isAdminAuthorized(req, adminSessionId)) {
     return res.status(403).json({ success: false, error: 'Non autorizzato' });
   }
-  if (!ip || typeof ip !== 'string' || !adminIPBlacklist.has(ip)) {
-    return res.status(400).json({ success: false, error: 'IP non valido o non presente' });
-  }
-  adminIPBlacklist.delete(ip);
-  res.json({ success: true, message: `IP ${ip} sbloccato`, blacklist: Array.from(adminIPBlacklist) });
+  res.json({ success: true, blacklist: Array.from(adminIPBlacklist) });
 });
 
 // Endpoint per ottenere la whitelist IP admin

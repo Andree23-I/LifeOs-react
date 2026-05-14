@@ -10,17 +10,15 @@ function AdminPanel({ adminSessionId, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('sessions');
   const [error, setError] = useState('');
-  // Stato per tool IP manuale
+  
+  // IP Management States
   const [manualIP, setManualIP] = useState('');
-  const [ipAddMsg, setIpAddMsg] = useState('');
+  const [ipMsg, setIpMsg] = useState('');
   const [ipWhitelist, setIpWhitelist] = useState([]);
-  const [manualBlockIP, setManualBlockIP] = useState('');
-  const [ipBlockMsg, setIpBlockMsg] = useState('');
   const [ipBlacklist, setIpBlacklist] = useState([]);
 
-  const isValidIP = (ip) => /^([0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
+  // --- FETCH FUNCTIONS ---
 
-  // Carica la whitelist IP admin
   const fetchWhitelist = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/whitelist`, {
@@ -32,11 +30,10 @@ function AdminPanel({ adminSessionId, onLogout }) {
       const data = await res.json();
       setIpWhitelist(data.whitelist || []);
     } catch (err) {
-      setIpWhitelist([]);
+      console.error(err);
     }
   }, [adminSessionId]);
 
-  // Carica la blacklist IP admin
   const fetchBlacklist = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/admin/blacklist`, {
@@ -48,145 +45,37 @@ function AdminPanel({ adminSessionId, onLogout }) {
       const data = await res.json();
       setIpBlacklist(data.blacklist || []);
     } catch (err) {
-      setIpBlacklist([]);
+      console.error(err);
     }
   }, [adminSessionId]);
 
-  // Rimuovi IP dalla whitelist
-  const handleRemoveIP = async (ip) => {
-    if (!window.confirm(`Rimuovere l'IP ${ip} dalla whitelist?`)) return;
-    setIpAddMsg('');
+  const fetchSessions = useCallback(async () => {
     try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/admin/remove-ip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSessionId, ip })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Errore nella rimozione dell\'IP');
-      setIpAddMsg('IP rimosso con successo!');
-      setIpWhitelist(data.whitelist || []);
-    } catch (err) {
-      setIpAddMsg(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  // Funzione per aggiungere IP manualmente
-  const handleAddIP = async (e) => {
-    e.preventDefault();
-    setIpAddMsg('');
-    if (!manualIP) {
-      setIpAddMsg('Inserisci un IP valido.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/admin/allow-ip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSessionId, ip: manualIP })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Errore nell\'aggiunta dell\'IP');
-      setIpAddMsg('IP autorizzato con successo!');
-      setManualIP('');
-      setIpWhitelist(data.whitelist || []);
-    } catch (err) {
-      setIpAddMsg(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-
-  const handleAddBlockedIP = async (e) => {
-    e.preventDefault();
-    setIpBlockMsg('');
-    if (!manualBlockIP || !isValidIP(manualBlockIP)) {
-      setIpBlockMsg('Inserisci un IP valido.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/admin/block-ip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSessionId, ip: manualBlockIP })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Errore nel blocco dell\'IP');
-      setIpBlockMsg('IP bloccato con successo!');
-      setManualBlockIP('');
-      fetchBlacklist();
-    } catch (err) {
-      setIpBlockMsg(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveBlockedIP = async (ip) => {
-    if (!window.confirm(`Sbloccare l'IP ${ip}?`)) return;
-    setIpBlockMsg('');
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_URL}/api/admin/unblock-ip`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSessionId, ip })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Errore nello sblocco dell\'IP');
-      setIpBlockMsg('IP sbloccato con successo!');
-      fetchBlacklist();
-    } catch (err) {
-      setIpBlockMsg(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-const fetchSessions = useCallback(async () => {
-    try {
-      setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
       });
-      
       if (!res.ok) throw new Error('Errore nel caricamento sessioni');
       const data = await res.json();
-      setActiveSessions(data.activeSessions);
-      setError('');
+      setActiveSessions(data.activeSessions || []);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, [adminSessionId]);
 
   const fetchHistory = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await fetch(`${API_URL}/api/admin/history`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
       });
-      
       if (!res.ok) throw new Error('Errore nel caricamento cronologia');
       const data = await res.json();
-      setHistory(data.history);
-      setError('');
+      setHistory(data.history || []);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   }, [adminSessionId]);
 
@@ -197,149 +86,207 @@ const fetchSessions = useCallback(async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId })
       });
-      
       if (!res.ok) throw new Error('Errore nel caricamento statistiche');
       const data = await res.json();
       setStats(data.stats);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
     }
   }, [adminSessionId]);
 
+  // --- HANDLERS ---
+
+  const handleAddIP = async (e) => {
+    e.preventDefault();
+    setIpMsg('');
+    if (!manualIP) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/allow-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip: manualIP })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore');
+      setIpMsg('✅ IP autorizzato!');
+      setManualIP('');
+      setIpWhitelist(data.whitelist || []);
+    } catch (err) {
+      setIpMsg(`❌ ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveIP = async (ip) => {
+    if (!window.confirm(`Rimuovere ${ip} dalla whitelist?`)) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/remove-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore');
+      setIpWhitelist(data.whitelist || []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBlockIP = async () => {
+    setIpMsg('');
+    if (!manualIP) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/block-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip: manualIP })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore');
+      setIpMsg('🚫 IP bloccato!');
+      setManualIP('');
+      setIpBlacklist(data.blacklist || []);
+    } catch (err) {
+      setIpMsg(`❌ ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnblockIP = async (ip) => {
+    if (!window.confirm(`Sbloccare ${ip}?`)) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/admin/unblock-ip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSessionId, ip })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Errore');
+      setIpBlacklist(data.blacklist || []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDisconnect = async (sessionId) => {
-    if (!window.confirm('Sei sicuro di voler disconnettere questo utente?')) return;
-    
+    if (!window.confirm('Disconnettere l\'utente?')) return;
     try {
       const res = await fetch(`${API_URL}/api/admin/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminSessionId, sessionIdToDisconnect: sessionId })
       });
-      
-      if (res.ok) {
-        fetchSessions();
-      }
+      if (res.ok) fetchSessions();
     } catch (err) {
-      setError('Errore nella disconnessione');
+      console.error(err);
     }
   };
 
+  // --- EFFECTS ---
+
   useEffect(() => {
-    fetchSessions();
-    fetchStats();
-    fetchWhitelist();
-    fetchBlacklist();
+    const initFetch = async () => {
+      setLoading(true);
+      await Promise.all([fetchSessions(), fetchStats(), fetchWhitelist(), fetchBlacklist()]);
+      setLoading(false);
+    };
+    initFetch();
+
     const interval = setInterval(() => {
       fetchSessions();
       fetchStats();
       fetchWhitelist();
       fetchBlacklist();
-    }, 5000); // Aggiorna ogni 5 secondi
+    }, 5000);
     return () => clearInterval(interval);
   }, [fetchSessions, fetchStats, fetchWhitelist, fetchBlacklist]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'history') {
-      fetchHistory();
-    }
+    if (tab === 'history') fetchHistory();
   };
 
   return (
     <div className="admin-panel fade-in">
       <header className="admin-header">
         <div className="admin-title">
-          <h1>🔐 Pannello Amministrativo {loading && <small style={{fontSize: '0.8rem', opacity: 0.7}}>(Aggiornamento...)</small>}</h1>
-          <p>Gestisci il sito e monitora gli utenti attivi</p>
+          <h1>🔐 Pannello Amministrativo {loading && <small style={{fontSize: '0.8rem', opacity: 0.5}}>...</small>}</h1>
+          <p>Monitoraggio e sicurezza in tempo reale</p>
         </div>
-        <button className="btn-logout" onClick={onLogout}>Esci da Admin</button>
+        <button className="btn-logout" onClick={onLogout}>Esci</button>
       </header>
 
       {error && <div className="error-message">⚠️ {error}</div>}
 
-      {/* Tool inserimento IP manuale + visualizzazione whitelist */}
-      <div className="glass-panel ip-tool-panel" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
-        <form onSubmit={handleAddIP} style={{display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
-          <label htmlFor="manual-ip" style={{fontWeight: 600}}>Aggiungi IP autorizzato:</label>
-          <input
-            id="manual-ip"
-            type="text"
-            value={manualIP}
-            onChange={e => setManualIP(e.target.value)}
-            placeholder="es. 192.168.1.100"
-            style={{padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', minWidth: 180}}
-            disabled={loading}
-          />
-          <button type="submit" className="btn-primary-small" disabled={loading}>Autorizza IP</button>
-          {ipAddMsg && <span style={{marginLeft: 8, color: ipAddMsg.includes('successo') ? 'green' : 'red'}}>{ipAddMsg}</span>}
-        </form>
-        <div style={{marginTop: 12}}>
-          <strong>Whitelist IP admin:</strong>
-          <ul style={{margin: '0.5rem 0 0 1.2rem', padding: 0}}>
-            {ipWhitelist.length === 0 ? (
-              <li style={{color: '#888'}}>Nessun IP autorizzato</li>
-            ) : (
-              ipWhitelist.map(ip => (
-                <li key={ip} style={{display: 'flex', alignItems: 'center', gap: 8}}>
+      {/* IP MANAGEMENT TOOL */}
+      <div className="glass-panel ip-tool-panel">
+        <div className="ip-form-container">
+          <form onSubmit={handleAddIP} className="admin-form">
+            <div className="input-group">
+              <label>Gestione Indirizzi IP:</label>
+              <input
+                type="text"
+                value={manualIP}
+                onChange={e => setManualIP(e.target.value)}
+                placeholder="Inserisci IP..."
+                disabled={loading}
+              />
+            </div>
+            <div className="btn-group">
+              <button type="submit" className="btn-primary-small" disabled={loading}>Autorizza (White)</button>
+              <button type="button" className="btn-danger-small" onClick={handleBlockIP} disabled={loading}>Blocca (Black)</button>
+            </div>
+          </form>
+          {ipMsg && <div className="ip-message">{ipMsg}</div>}
+        </div>
+
+        <div className="ip-lists-grid">
+          <div className="ip-list-column">
+            <h3>✅ Whitelist (Admin)</h3>
+            <ul>
+              {ipWhitelist.map(ip => (
+                <li key={ip}>
                   <code>{ip}</code>
-                  <button
-                    className="btn-danger-small"
-                    style={{marginLeft: 8, fontSize: '0.9rem', padding: '0.2rem 0.7rem'}}
-                    onClick={() => handleRemoveIP(ip)}
-                    disabled={loading}
-                  >Rimuovi</button>
+                  <button onClick={() => handleRemoveIP(ip)} disabled={loading}>×</button>
                 </li>
-              ))
-            )}
-          </ul>
+              ))}
+              {ipWhitelist.length === 0 && <li className="empty">Nessuno</li>}
+            </ul>
+          </div>
+          <div className="ip-list-column">
+            <h3>🚫 Blacklist (Bloccati)</h3>
+            <ul>
+              {ipBlacklist.map(ip => (
+                <li key={ip}>
+                  <code>{ip}</code>
+                  <button onClick={() => handleUnblockIP(ip)} disabled={loading}>×</button>
+                </li>
+              ))}
+              {ipBlacklist.length === 0 && <li className="empty">Nessuno</li>}
+            </ul>
+          </div>
         </div>
       </div>
 
-      <div className="glass-panel ip-tool-panel" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
-        <form onSubmit={handleAddBlockedIP} style={{display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
-          <label htmlFor="block-ip" style={{fontWeight: 600}}>Blocca IP:</label>
-          <input
-            id="block-ip"
-            type="text"
-            value={manualBlockIP}
-            onChange={e => setManualBlockIP(e.target.value)}
-            placeholder="es. 192.168.1.100"
-            style={{padding: '0.5rem', borderRadius: 6, border: '1px solid #ccc', minWidth: 180}}
-            disabled={loading}
-          />
-          <button type="submit" className="btn-danger-small" disabled={loading}>Blocca IP</button>
-          {ipBlockMsg && <span style={{marginLeft: 8, color: ipBlockMsg.includes('successo') ? 'green' : 'red'}}>{ipBlockMsg}</span>}
-        </form>
-        <div style={{marginTop: 12}}>
-          <strong>Blacklist IP:</strong>
-          <ul style={{margin: '0.5rem 0 0 1.2rem', padding: 0}}>
-            {ipBlacklist.length === 0 ? (
-              <li style={{color: '#888'}}>Nessun IP bloccato</li>
-            ) : (
-              ipBlacklist.map(ip => (
-                <li key={ip} style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                  <code>{ip}</code>
-                  <button
-                    className="btn-secondary"
-                    style={{marginLeft: 8, fontSize: '0.9rem', padding: '0.2rem 0.7rem'}}
-                    onClick={() => handleRemoveBlockedIP(ip)}
-                    disabled={loading}
-                  >Sblocca</button>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
+      {/* STATS */}
       <div className="stats-grid">
         <div className="stat-card glass-panel">
           <div className="stat-label">Utenti Attivi</div>
           <div className="stat-number">{stats.activeUsers}</div>
         </div>
         <div className="stat-card glass-panel">
-          <div className="stat-label">Sessioni Totali Oggi</div>
+          <div className="stat-label">Sessioni Oggi</div>
           <div className="stat-number">{stats.totalSessionsToday}</div>
         </div>
         <div className="stat-card glass-panel">
@@ -348,128 +295,67 @@ const fetchSessions = useCallback(async () => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* TABS */}
       <div className="admin-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'sessions' ? 'active' : ''}`}
-          onClick={() => handleTabChange('sessions')}
-        >
-          👥 Sessioni Attive ({activeSessions.length})
+        <button className={`tab-btn ${activeTab === 'sessions' ? 'active' : ''}`} onClick={() => handleTabChange('sessions')}>
+          👥 Sessioni Attive
         </button>
-        <button 
-          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => handleTabChange('history')}
-        >
+        <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => handleTabChange('history')}>
           📋 Cronologia
         </button>
       </div>
 
-      {/* Sessioni Attive Tab */}
-      {activeTab === 'sessions' && (
-        <div className="tab-content glass-panel">
+      <div className="tab-content glass-panel">
+        {activeTab === 'sessions' ? (
           <div className="table-container">
-            {activeSessions.length === 0 ? (
-              <div className="empty-state">Nessuna sessione attiva</div>
-            ) : (
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Utente</th>
-                    <th>IP</th>
-                    <th>Accesso</th>
-                    <th>Tipo</th>
-                    <th>Azioni</th>
+            <table>
+              <thead>
+                <tr>
+                  <th>Utente</th>
+                  <th>IP</th>
+                  <th>Accesso</th>
+                  <th>Tipo</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeSessions.map(s => (
+                  <tr key={s.sessionId}>
+                    <td><strong>{s.userName}</strong></td>
+                    <td><code>{s.ip}</code></td>
+                    <td>{new Date(s.loginTime).toLocaleTimeString()}</td>
+                    <td>{s.isAdmin ? <span className="badge-admin">Admin</span> : <span className="badge-user">User</span>}</td>
+                    <td>{!s.isAdmin && <button className="btn-danger-small" onClick={() => handleDisconnect(s.sessionId)}>Disconnect</button>}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {activeSessions.map((session) => (
-                    <tr key={session.sessionId}>
-                      <td>
-                        <strong>{session.userName}</strong>
-                        <br/>
-                        <small style={{color: 'var(--text-secondary)'}}>{session.userId}</small>
-                      </td>
-                      <td><code>{session.ip}</code></td>
-                      <td>{new Date(session.loginTime).toLocaleTimeString('it-IT')}</td>
-                      <td>
-                        {session.isAdmin ? (
-                          <span className="badge-admin">Admin</span>
-                        ) : (
-                          <span className="badge-user">Utente</span>
-                        )}
-                      </td>
-                      <td>
-                        {!session.isAdmin && (
-                          <button 
-                            className="btn-danger-small"
-                            onClick={() => handleDisconnect(session.sessionId)}
-                          >
-                            Disconnetti
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
-
-      {/* History Tab */}
-      {activeTab === 'history' && (
-        <div className="tab-content glass-panel">
+        ) : (
           <div className="table-container">
-            {history.length === 0 ? (
-              <div className="empty-state">Nessuna cronologia disponibile</div>
-            ) : (
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Utente</th>
-                    <th>IP</th>
-                    <th>Accesso</th>
-                    <th>Disconnessione</th>
-                    <th>Durata</th>
+            <table>
+              <thead>
+                <tr>
+                  <th>Utente</th>
+                  <th>IP</th>
+                  <th>Inizio</th>
+                  <th>Fine</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h, i) => (
+                  <tr key={i}>
+                    <td><strong>{h.userName}</strong></td>
+                    <td><code>{h.ip}</code></td>
+                    <td>{new Date(h.loginTime).toLocaleTimeString()}</td>
+                    <td>{h.logoutTime ? new Date(h.logoutTime).toLocaleTimeString() : '-'}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {history.map((session, idx) => {
-                    const duration = session.logoutTime 
-                      ? Math.round((new Date(session.logoutTime) - new Date(session.loginTime)) / 1000 / 60)
-                      : '-';
-                    return (
-                      <tr key={idx}>
-                        <td><strong>{session.userName}</strong></td>
-                        <td><code>{session.ip}</code></td>
-                        <td>{new Date(session.loginTime).toLocaleTimeString('it-IT')}</td>
-                        <td>{session.logoutTime ? new Date(session.logoutTime).toLocaleTimeString('it-IT') : '-'}</td>
-                        <td>{typeof duration === 'number' ? `${duration} min` : '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
-
-      {/* IP Stats */}
-      {stats.sessionsByIP && (
-        <div className="glass-panel ip-stats">
-          <h3>📊 Accessi per IP</h3>
-          <div className="ip-list">
-            {Object.entries(stats.sessionsByIP).map(([ip, count]) => (
-              <div key={ip} className="ip-item">
-                <span>{ip}</span>
-                <span className="ip-count">{count} accessi</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
